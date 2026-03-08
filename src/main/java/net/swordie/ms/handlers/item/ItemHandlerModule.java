@@ -316,14 +316,10 @@ public class ItemHandlerModule {
         return false;
     }
 
-    protected static boolean handleVioletCube(InPacket inPacket, Char chr, int itemId) {
-        short ePos;
-        InvType invType;
-        Equip equip;
-        Equip oldEquip;
-        ePos = (short) inPacket.decodeInt();
-        invType = ePos < 0 ? EQUIPPED : EQUIP;
-        equip = (Equip) chr.getInventoryByType(invType).getItemBySlot(ePos);
+    protected static boolean handleVioletCube(Client c, InPacket inPacket, Char chr, int itemId, Item item) {
+        short ePos = (short) inPacket.decodeInt();
+        InvType invType = ePos < 0 ? EQUIPPED : EQUIP;
+        Equip equip = (Equip) chr.getInventoryByType(invType).getItemBySlot(ePos);
         if (equip == null) {
             chr.chatMessage(SystemNotice, "Could not find equip.");
             chr.dispose();
@@ -334,21 +330,32 @@ public class ItemHandlerModule {
             chr.dispose();
             return true;
         }
-        oldEquip = equip.deepCopy();
-
-        OutPacket outPacket = new OutPacket(OutHeader.UNK_690);
-        outPacket.encodeInt(chr.getId());
-        outPacket.encodeByte(1);
-        outPacket.encodeInt(1);
-        outPacket.encodeInt(1);
-        outPacket.encodeInt(1);
-        outPacket.encodeInt(1);
-        outPacket.encodeInt(1);
-        outPacket.encodeInt(1);
-        outPacket.encodeInt(1);
-        outPacket.encodeInt(1);
-
-        chr.write(outPacket);
+        short hiddenValue = ItemGrade.getHiddenGradeByVal(equip.getBaseGrade()).getVal();
+        boolean tierUp = !(hiddenValue >= ItemGrade.HiddenLegendary.getVal()) && Util.succeedProp(ItemConstants.getTierUpChance(itemId));
+        if (tierUp) {
+            hiddenValue++;
+        }
+        ItemGrade targetGrade;
+        switch (hiddenValue) {
+            case 1:
+                targetGrade = ItemGrade.Rare;
+                break;
+            case 2:
+                targetGrade = ItemGrade.Epic;
+                break;
+            case 3:
+                targetGrade = ItemGrade.Unique;
+                break;
+            case 4:
+                targetGrade = ItemGrade.Legendary;
+                break;
+            default:
+                targetGrade = ItemGrade.getGradeByVal(equip.getBaseGrade());
+                break;
+        }
+        Map<String, Object> props = new HashMap<>();
+        props.put("violetCube", new VioletCubeSession(equip, item, ePos, targetGrade));
+        chr.getScriptManager().startScript(0, "violet_cube", ScriptType.Npc, props);
         return false;
     }
 

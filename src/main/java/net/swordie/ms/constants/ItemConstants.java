@@ -1050,6 +1050,7 @@ public class ItemConstants {
                 break;
             case ItemConstants.BLACK_CUBE:
             case ItemConstants.WHITE_BONUS_POT_CUBE:
+            case 5062024: // Violet cube
                 res = 40;
                 break;
         }

@@ -134,8 +134,8 @@ public class ItemHandler {
                     ItemHandlerModule.handleCubeOfEquality(c, inPacket, chr, pos, itemId, item);
                     break;
                 case 5062024: // Violet cube
-                    ItemHandlerModule.handleVioletCube(inPacket, chr, itemId);
-                    break;
+                    ItemHandlerModule.handleVioletCube(c, inPacket, chr, itemId, item);
+                    return;
                 case ItemConstants.BONUS_POT_CUBE: // Bonus Potential Cube
                 case ItemConstants.SPECIAL_BONUS_POT_CUBE: // [Special] Bonus Potential Cube
                 case ItemConstants.WHITE_BONUS_POT_CUBE: // White Bonus Potential Cube
