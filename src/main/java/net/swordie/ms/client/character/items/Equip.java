@@ -2097,6 +2097,15 @@ public class Equip extends Item {
         return tierUp;
     }
 
+    public void applyEqualityCube(boolean bonus) {
+        ItemGrade grade = ItemGrade.getGradeByVal(bonus ? getBonusGrade() : getBaseGrade());
+        List<Integer> possibleOptions = ItemConstants.getWeightedOptionsByEquip(this, bonus, grade);
+        int lines = getOption(2, bonus) == 0 ? 2 : 3;
+        for (int i = 0; i < lines; i++) {
+            setOption(i, Util.getRandomFromCollection(possibleOptions), bonus);
+        }
+    }
+
     public void updateDecentSkills(Char chr, boolean equip) { // Works on the principle that equips cannot have their potential/socket changed whilst equipped.
         int jobId = chr.getJob();
         Set<Integer> decentSkills = new HashSet<>();

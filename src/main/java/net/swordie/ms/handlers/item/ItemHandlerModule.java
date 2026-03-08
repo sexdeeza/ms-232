@@ -400,6 +400,38 @@ public class ItemHandlerModule {
         return false;
     }
 
+    protected static boolean handleCubeOfEquality(Client c, InPacket inPacket, Char chr, short pos, int itemId, Item item) {
+        short ePos = (short) inPacket.decodeInt();
+        if (inPacket.getUnreadAmount() >= 4) {
+            inPacket.decodeInt(); // reserved
+        }
+        InvType invType = ePos < 0 ? EQUIPPED : EQUIP;
+        Equip equip = (Equip) chr.getInventoryByType(invType).getItemBySlot(ePos);
+        if (equip == null) {
+            chr.chatMessage(SystemNotice, "Could not find equip.");
+            chr.dispose();
+            return true;
+        } else if (equip.getBaseGrade() < ItemGrade.Rare.getVal()) {
+            String msg = String.format("Character %d tried to use Cube of Equality (id %d) on an equip without a potential (id %d)", chr.getId(), itemId, equip.getItemId());
+            chr.getOffenseManager().addOffense(msg);
+            chr.dispose();
+            return true;
+        }
+
+        equip.applyEqualityCube(false);
+        c.write(FieldPacket.redCubeResult(chr, false, itemId, ePos, equip));
+        c.write(FieldPacket.showItemReleaseEffect(chr.getId(), ePos, false));
+        equip.updateToChar(chr);
+        if (JobConstants.isZero(chr.getJob()) && ItemConstants.isLongOrBigSword(equip.getItemId())) {
+            int otherEquipPos = Math.abs(ePos) == 10 ? 11 : 10;
+            Equip otherEquip = (Equip) chr.getEquippedInventory().getItemBySlot(otherEquipPos);
+            otherEquip.copyItemOptionsFrom(equip);
+            otherEquip.updateToChar(chr);
+        }
+        chr.consumeItem(item);
+        return false;
+    }
+
     protected static boolean handleTeleportRock(Client c, InPacket inPacket, Char chr) {
         //can't teleport with hyper tele rock while in instance.
         if(chr.getField().getInstance() != null) {

@@ -42,6 +42,7 @@ public class ItemConstants {
 
     public static final int RED_CUBE = 5062009;
     public static final int BLACK_CUBE = 5062010;
+    public static final int CUBE_OF_EQUALITY = 5062021;
     public static final int OCCULT_CUBE = 2711000;
     public static final int MEISTER_CUBE = 2711004;
     public static final int CRAFTSMAN_CUBE = 2711003;
@@ -1015,6 +1016,10 @@ public class ItemConstants {
 
     public static List<Integer> getWeightedOptionsByEquip(Equip equip, boolean bonus, int line) {
         ItemGrade grade = getLineTier(line, ItemGrade.getGradeByVal(bonus ? equip.getBonusGrade() : equip.getBaseGrade()));
+        return getWeightedOptionsByEquip(equip, bonus, grade);
+    }
+
+    public static List<Integer> getWeightedOptionsByEquip(Equip equip, boolean bonus, ItemGrade grade) {
         var cacheKey = new WeightedItemOptionKey(equip.getItemId(), bonus, grade);
         if (weightedItemOptionsCache.containsKey(cacheKey)) {
             return weightedItemOptionsCache.get(cacheKey);

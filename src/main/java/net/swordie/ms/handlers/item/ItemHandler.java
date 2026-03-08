@@ -130,6 +130,9 @@ public class ItemHandler {
                 case ItemConstants.BLACK_CUBE: // Black cube
                     ItemHandlerModule.handleCube(c, inPacket, chr, pos, itemId, item);
                     break;
+                case ItemConstants.CUBE_OF_EQUALITY:
+                    ItemHandlerModule.handleCubeOfEquality(c, inPacket, chr, pos, itemId, item);
+                    break;
                 case 5062024: // Violet cube
                     ItemHandlerModule.handleVioletCube(inPacket, chr, itemId);
                     break;
