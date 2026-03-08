@@ -29,6 +29,77 @@ public class ItemUpgradeHandler {
 
     private static final Logger log = LogManager.getLogger(ItemUpgradeHandler.class);
 
+    private static int rollWeightedStat(int low, int mid, int high) {
+        int roll = Util.getRandom(99);
+        if (roll < 50) {
+            return low;
+        }
+        if (roll < 90) {
+            return mid;
+        }
+        return high;
+    }
+
+    private static int rollTwoWeightedStat(int low, int high, int lowChance) {
+        return Util.getRandom(99) < lowChance ? low : high;
+    }
+
+    private static void applyCustomXScrollStats(Equip equip, int scrollID) {
+        switch (scrollID) {
+            case 2615031:
+            case 2615053:
+            case 2616061:
+                equip.addStat(iPAD, rollWeightedStat(5, 6, 7));
+                return;
+            case 2615032:
+            case 2616062:
+                equip.addStat(iMAD, rollWeightedStat(5, 6, 7));
+                return;
+            case 2047405:
+            case 2047407:
+            case 2048836:
+            case 2048838:
+            case 2046856:
+            case 2047402:
+            case 2048094:
+            case 2048804:
+                equip.addStat(iPAD, rollTwoWeightedStat(4, 5, 85));
+                return;
+            case 2047406:
+            case 2046408:
+            case 2048837:
+            case 2048839:
+            case 2046857:
+            case 2047403:
+            case 2048095:
+            case 2048805:
+                equip.addStat(iMAD, rollTwoWeightedStat(4, 5, 85));
+                return;
+            case 2613050:
+            case 2612061:
+                equip.addStat(iPAD, rollWeightedStat(10, 11, 12));
+                return;
+            case 2613051:
+            case 2612062:
+                equip.addStat(iMAD, rollWeightedStat(10, 11, 12));
+                return;
+            case 2046991:
+            case 2640024:
+            case 2047844:
+                equip.addStat(iPAD, rollWeightedStat(9, 10, 11));
+                return;
+            case 2046992:
+            case 2040025:
+                equip.addStat(iMAD, rollWeightedStat(9, 10, 11));
+                return;
+            case 2046829:
+                equip.addStat(iPAD, rollWeightedStat(2, 3, 4));
+                return;
+            default:
+                return;
+        }
+    }
+
 
     @Handler(op = InHeader.USER_EX_ITEM_UPGRADE_ITEM_USE_REQUEST)
     public static void handleUserExItemUpgradeItemUseRequest(Client c, InPacket inPacket) {
@@ -386,6 +457,7 @@ public class ItemUpgradeHandler {
                             equip.addStat(ss.getEquipStat(), val);
                         }
                     }
+                    applyCustomXScrollStats(equip, scrollID);
                 }
                 if (useTuc) {
                     equip.addStat(tuc, -1);

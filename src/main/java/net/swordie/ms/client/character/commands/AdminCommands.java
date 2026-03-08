@@ -516,6 +516,10 @@ public class AdminCommands {
 
                     3221054, //BullsEye Shot
 
+                    // Pathfinder
+                    3011304, //Cardinal Deluge
+                    3301003, //Cardinal Burst
+
 
                     4001003, //Dark Sight
                     4001005, //Haste
