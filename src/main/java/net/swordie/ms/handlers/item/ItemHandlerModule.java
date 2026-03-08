@@ -256,7 +256,12 @@ public class ItemHandlerModule {
                 chr.setMemorialCubeInfo(new MemorialCubeInfo(equip, itemId, oldOptions));
             }
             chr.getField().broadcastPacket(UserPacket.showItemMemorialEffect(chr.getId(), true, itemId, ePos, pos));
-            c.write(WvsContext.whiteCubeResult(equip, item.getBagIndex(), chr.getMemorialCubeInfo()));
+            c.write(WvsContext.whiteCubeResult(
+                    equip,
+                    item.getBagIndex(),
+                    chr.getCashInventory().getQuantity(itemId) - 1,
+                    chr.getMemorialCubeInfo()
+            ));
         }
         if (itemId != ItemConstants.WHITE_BONUS_POT_CUBE) {
             equip.updateToChar(chr);

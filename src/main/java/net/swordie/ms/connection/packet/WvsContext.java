@@ -738,12 +738,14 @@ public class WvsContext {
         return outPacket;
     }
 
-    public static OutPacket whiteCubeResult(Equip equip, int cubeIndex, MemorialCubeInfo mci) {
+    public static OutPacket whiteCubeResult(Equip equip, int cubeIndex, int remainingCount, MemorialCubeInfo mci) {
         OutPacket outPacket = new OutPacket(OutHeader.WHITE_ADDITIONAL_CUBE_RESULT);
 
         outPacket.encodeLong(equip.getSerialNumber());
         mci.encode(outPacket);
+        outPacket.encodeInt(remainingCount);
         outPacket.encodeInt(cubeIndex);
+        outPacket.encodeByte(true); // bShowAnimation
 
         return outPacket;
     }
