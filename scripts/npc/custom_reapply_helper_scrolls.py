@@ -32,12 +32,20 @@ if "oldEquip" in locals() and oldEquip is not None and oldEquip.hasAttribute(Equ
                 changes.append("#b{}#k: #r{}#k -> #g{}#k".format(label, old_val, new_val))
 
     change_text = "\r\n".join(changes) if changes else "No visible stat change was detected."
+    should_keep_new_result = scrollSuccess if "scrollSuccess" in locals() else True
 
     oldEquip.removeAttribute(EquipAttribute.ReturnScroll)
     equip.removeAttribute(EquipAttribute.ReturnScroll)
-    prompt = "A #bReturn Scroll#k was applied to this item.\r\n\r\n{}\r\n\r\nDo you want to keep the new scroll result?\r\n#rChoose No to restore the previous state.#k".format(change_text)
-    if not sm.sendAskYesNo(prompt):
+    if should_keep_new_result:
+        prompt = "A #bReturn Scroll#k was applied to this item.\r\n\r\n{}\r\n\r\nDo you want to keep the new scroll result?\r\n#rChoose No to restore the previous state.#k".format(change_text)
+        should_keep_new_result = sm.sendAskYesNo(prompt)
+
+    if not should_keep_new_result:
+        current_tuc = equip.getTuc()
+        old_cuc = oldEquip.getCuc()
         equip.copyScrollStatsFrom(oldEquip)
+        equip.setTuc(current_tuc)
+        equip.setCuc(old_cuc)
         equip.copyAttributesFrom(oldEquip)
         if "otherEquip" in locals() and otherEquip is not None:
             otherEquip.copyScrollStatsFrom(equip)

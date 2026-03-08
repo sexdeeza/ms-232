@@ -851,9 +851,10 @@ public class ItemHandlerModule {
         return true;
     }
 
-    public static void startPostScrollHelperScript(Char chr, Equip equip, Equip oldEquip, Equip otherEquip) {
+    public static void startPostScrollHelperScript(Char chr, Equip equip, Equip oldEquip, Equip otherEquip, boolean scrollSuccess) {
         var props = new HashMap<String, Object>();
         props.put("equip", equip);
+        props.put("scrollSuccess", scrollSuccess);
         if (oldEquip != null) {
             props.put("oldEquip", oldEquip);
         }
@@ -917,7 +918,7 @@ public class ItemHandlerModule {
         equip.updateToChar(chr);
         suis = ItemConstants.getScrollUpgradeInfosByEquip(equip);
         c.write(FieldPacket.scrollUpgradeDisplay(false, suis));
-        startPostScrollHelperScript(chr, equip, hadReturnScroll ? prevEquip : null, otherEquip);
+        startPostScrollHelperScript(chr, equip, hadReturnScroll ? prevEquip : null, otherEquip, success);
     }
 
     public static void handleBeastTamerSpReset(Char chr, InPacket inPacket, Item item) {

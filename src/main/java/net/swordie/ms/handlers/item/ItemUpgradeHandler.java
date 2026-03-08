@@ -28,6 +28,14 @@ import static net.swordie.ms.enums.InvType.*;
 public class ItemUpgradeHandler {
 
     private static final Logger log = LogManager.getLogger(ItemUpgradeHandler.class);
+    private static final int CHAOS_ROLL_SCALE = 1_000_000;
+    private static final int[] NORMAL_CHAOS_VALUES = {-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5};
+    private static final int[] NORMAL_CHAOS_WEIGHTS = {49_400, 29_700, 36_500, 80_000, 137_000, 183_800, 193_100, 158_700, 102_100, 19_800, 9_900};
+    private static final int[] INCREDIBLE_COG_VALUES = {0, 1, 2, 3, 4, 6};
+    private static final int[] INCREDIBLE_COG_WEIGHTS = {183_827, 330_081, 238_669, 138_661, 49_438, 59_324};
+    // Based on the normal chaos distribution, extended to -7..7 with small tails and a slight positive bias.
+    private static final int[] MIRACULOUS_CHAOS_VALUES = {-7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7};
+    private static final int[] MIRACULOUS_CHAOS_WEIGHTS = {4_000, 8_000, 48_116, 28_928, 35_551, 77_920, 133_438, 179_021, 188_079, 154_574, 99_445, 19_285, 9_643, 10_000, 4_000};
 
     private static int rollWeightedStat(int low, int mid, int high) {
         int roll = Util.getRandom(99);
@@ -42,6 +50,47 @@ public class ItemUpgradeHandler {
 
     private static int rollTwoWeightedStat(int low, int high, int lowChance) {
         return Util.getRandom(99) < lowChance ? low : high;
+    }
+
+    private static int rollWeightedValue(int[] values, int[] weights) {
+        int roll = Util.getRandom(CHAOS_ROLL_SCALE - 1);
+        int cur = 0;
+        for (int i = 0; i < values.length; i++) {
+            cur += weights[i];
+            if (roll < cur) {
+                return values[i];
+            }
+        }
+        return values[values.length - 1];
+    }
+
+    private static boolean isMiraculousChaosScroll(int scrollID) {
+        return scrollID == ItemConstants.MIRACULOUS_CHAOS_SCROLL_50
+                || scrollID == ItemConstants.MIRACULOUS_CHAOS_SCROLL_60;
+    }
+
+    private static boolean isIncredibleChaosOfGoodnessScroll(int scrollID) {
+        return scrollID == ItemConstants.INCREDIBLE_CHAOS_SCROLL_OF_GOODNESS_20
+                || scrollID == ItemConstants.INCREDIBLE_CHAOS_SCROLL_OF_GOODNESS_40
+                || scrollID == ItemConstants.INCREDIBLE_CHAOS_SCROLL_OF_GOODNESS_50
+                || scrollID == ItemConstants.INCREDIBLE_CHAOS_SCROLL_OF_GOODNESS_60;
+    }
+
+    private static int rollChaosStat(int scrollID, boolean noNegative, EquipBaseStat ebs) {
+        int amount;
+        if (isMiraculousChaosScroll(scrollID)) {
+            amount = rollWeightedValue(MIRACULOUS_CHAOS_VALUES, MIRACULOUS_CHAOS_WEIGHTS);
+        } else if (isIncredibleChaosOfGoodnessScroll(scrollID)) {
+            amount = rollWeightedValue(INCREDIBLE_COG_VALUES, INCREDIBLE_COG_WEIGHTS);
+        } else if (!noNegative) {
+            amount = rollWeightedValue(NORMAL_CHAOS_VALUES, NORMAL_CHAOS_WEIGHTS);
+        } else {
+            amount = Util.getRandom(ItemConstants.RAND_CHAOS_MAX);
+        }
+        if (ebs == iMaxHP || ebs == iMaxMP) {
+            amount *= 10;
+        }
+        return amount;
     }
 
     private static void applyCustomXScrollStats(Equip equip, int scrollID) {
@@ -438,15 +487,30 @@ public class ItemUpgradeHandler {
                 boolean chaos = vals.containsKey(ScrollStat.randStat);
                 if (chaos) {
                     boolean noNegative = vals.containsKey(ScrollStat.noNegative);
-                    int max = vals.containsKey(ScrollStat.incRandVol) ? ItemConstants.INC_RAND_CHAOS_MAX : ItemConstants.RAND_CHAOS_MAX;
-                    for (EquipBaseStat ebs : ScrollStat.getRandStats()) {
-                        int cur = (int) equip.getBaseStat(ebs);
-                        if (cur == 0) {
-                            continue;
+                    Map<EquipBaseStat, Integer> chaosRolls = new java.util.EnumMap<>(EquipBaseStat.class);
+                    boolean hasChaosTarget;
+                    boolean hasNonZeroChange;
+                    do {
+                        chaosRolls.clear();
+                        hasChaosTarget = false;
+                        hasNonZeroChange = false;
+                        for (EquipBaseStat ebs : ScrollStat.getRandStats()) {
+                            int cur = (int) equip.getBaseStat(ebs);
+                            if (cur == 0) {
+                                continue;
+                            }
+                            hasChaosTarget = true;
+                            int randStat = rollChaosStat(scrollID, noNegative, ebs);
+                            chaosRolls.put(ebs, randStat);
+                            if (randStat != 0) {
+                                hasNonZeroChange = true;
+                            }
                         }
-                        int randStat = Util.getRandom(max);
-                        randStat = !noNegative && Util.succeedProp(50) ? -randStat : randStat;
-                        equip.addStat(ebs, randStat);
+                    } while (hasChaosTarget && !hasNonZeroChange);
+
+                    for (Map.Entry<EquipBaseStat, Integer> entry : chaosRolls.entrySet()) {
+                        int randStat = entry.getValue();
+                        equip.addStat(entry.getKey(), randStat);
                     }
                 }
                 if (recover) {
@@ -529,7 +593,7 @@ public class ItemUpgradeHandler {
                     otherEquip.updateToChar(chr);
                 }
                 if (hadReturnScroll) {
-                    ItemHandlerModule.startPostScrollHelperScript(chr, equip, prevEquip, otherEquip);
+                    ItemHandlerModule.startPostScrollHelperScript(chr, equip, prevEquip, otherEquip, success);
                 }
             }
             chr.consumeItem(scroll);
