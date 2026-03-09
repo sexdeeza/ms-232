@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static net.swordie.ms.enums.StealMemoryType.STEAL_SKILL;
 import static net.swordie.ms.enums.StealMemoryType.REMOVE_STEAL_MEMORY;
 
 /**
@@ -133,6 +134,61 @@ public class SkillStealManager {
 
         StolenSkill stolenSkill = new StolenSkill(chr, 0, skillId, pos, slv);
         chr.addStolenSkill(stolenSkill);
+    }
+
+    public static boolean tryAddStolenSkill(Char chr, int skillId, int stolenSkillCurLv, int stolenSkillMaxLv) {
+        var stolenSkillInfo = StolenSkillData.getStolenSkillInfoBySkillId(skillId);
+        if (stolenSkillInfo == null) {
+            chr.chatMessage(String.format("Unknown Stolen Skill (%d).", skillId));
+            return false;
+        }
+
+        var tabPos = stolenSkillInfo.getTabPos();
+
+        // Check if Player already has skill, if so compare skill levels
+        var curStolenSkill = SkillStealManager.getStolenSkillBySkillId(chr, skillId);
+        if (curStolenSkill != null) {
+            if (curStolenSkill.getCurrentlv() >= stolenSkillCurLv) {
+                chr.chatMessage("You already have this stolen skill.");
+                return false;
+            }
+            curStolenSkill.setCurrentlv(stolenSkillCurLv);
+            if (chr.hasSkill(skillId)) {
+                chr.getSkill(skillId).setCurrentLevel(stolenSkillCurLv);
+            }
+            var adjusted = SkillStealManager.getAdjustedPositionByRealPosition(curStolenSkill.getPosition());
+            if (adjusted == null) {
+                chr.chatMessage("Could not continue with stealing skills due to an unknown error.");
+                return false;
+            }
+            chr.write(UserLocal.changeStealMemoryResult(STEAL_SKILL, adjusted.getLeft(), adjusted.getRight(),
+                    curStolenSkill.getSkillId(), curStolenSkill.getCurrentlv(), stolenSkillMaxLv));
+            return true;
+        }
+
+        // Check if Player has enough space to steal the skill
+        if (!SkillStealManager.hasEnoughSpace(chr, tabPos)) {
+            chr.chatMessage("You do not have enough space.");
+            return false;
+        }
+
+        // Extract First Empty Position, if -1. Means no Space
+        var realPosition = SkillStealManager.getFirstEmptyPosition(chr, tabPos);
+        if (realPosition == -1) {
+            chr.chatMessage("You do not have enough space.");
+            return false;
+        }
+
+        var adjusted = SkillStealManager.getAdjustedPositionByRealPosition(realPosition);
+        if (adjusted == null) {
+            chr.chatMessage("Could not continue with stealing skills due to an unknown error.");
+            return false;
+        }
+
+        SkillStealManager.addStolenSkill(chr, skillId, stolenSkillCurLv, realPosition);
+        chr.write(UserLocal.changeStealMemoryResult(STEAL_SKILL, adjusted.getLeft(), adjusted.getRight(),
+                skillId, stolenSkillCurLv, stolenSkillMaxLv));
+        return true;
     }
 
     public static void removeStolenSkill(Char chr, int skillId) {

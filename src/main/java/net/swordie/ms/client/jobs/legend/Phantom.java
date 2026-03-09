@@ -46,6 +46,7 @@ import net.swordie.ms.loaders.SkillData;
 import net.swordie.ms.util.Position;
 import net.swordie.ms.util.Rect;
 import net.swordie.ms.util.Util;
+import net.swordie.ms.scripts.ScriptType;
 import net.swordie.ms.world.field.Field;
 import net.swordie.ms.world.field.fieldeffect.FieldEffect;
 import org.python.modules.math;
@@ -642,9 +643,8 @@ public class Phantom extends Job {
                 tsm.putCharacterStatValue(IndieNotDamaged, o1, true);
                 break;
             case GHOSTWALK:
-                // [Phantom] Custom Skill Change | Use 'Ghostwalk' to quick swap between presets
                 if (chr.getLevel() >= 10) {
-                    SkillStealManager.swapPresets(chr);
+                    chr.getScriptManager().startScript(0, "phantom_skill_swipe", ScriptType.Npc);
                 } else {
                     o1.nOption = si.getValue(x, slv);
                     o1.rOption = skillId;
