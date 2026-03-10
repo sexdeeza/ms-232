@@ -64,7 +64,12 @@ public class MobGen extends Life {
         if (CustomConstants.AUTO_AGGRO && FieldConstants.isAggroField(field.getId())) {
             field.broadcastPacket(MobPool.forceChase(mob.getObjectId(), false));
         }
-        setNextPossibleSpawnTime(System.currentTimeMillis() + (getMob().getMobTime() * 1000));
+        int mobTime = getMob().getMobTime();
+        long respawnDelay = mobTime * 1000L;
+        if (mobTime > 0) {
+            respawnDelay = Math.max(1L, Math.round(respawnDelay / field.getMonolithRateMultiplier()));
+        }
+        setNextPossibleSpawnTime(System.currentTimeMillis() + respawnDelay);
         setHasSpawned(true);
     }
 
@@ -82,7 +87,7 @@ public class MobGen extends Life {
         // not over max mobs, delay of spawn ended, if mobtime == -1 (not respawnable) must not have yet spawned
         // no mob in area around this, unless kishin is active
         return canSpawnOnSpecialField(field)
-                && currentMobs < field.getInfo().getFixedMobCapacity()
+                && currentMobs < field.getEffectiveMobCapacity()
                 && getNextPossibleSpawnTime() < System.currentTimeMillis()
                 && (getMob().getMobTime() != -1 || !hasSpawned()
                     || getMob().getTemplateId() == 9001005) // 2nd job canonneer quest, has a mob time of -1

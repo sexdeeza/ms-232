@@ -104,6 +104,7 @@ public class ItemSkillHandler implements ICommonSkillHandler {
                 field = chr.getField();
                 summon.setMoveAbility(MoveAbility.Stop);
                 field.spawnSummonAndRemoveOld(summon);
+                field.generateMobs(false);
                 break;
             case WHITE_ANGELIC_BLESSING:
             case WHITE_ANGELIC_BLESSING_2:

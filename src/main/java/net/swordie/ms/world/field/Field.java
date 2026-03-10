@@ -11,6 +11,7 @@ import net.swordie.ms.client.character.skills.TownPortal;
 import net.swordie.ms.client.character.skills.info.SkillInfo;
 import net.swordie.ms.client.character.skills.temp.CharacterTemporaryStat;
 import net.swordie.ms.client.character.skills.temp.TemporaryStatManager;
+import net.swordie.ms.client.jobs.common.ItemSkillHandler;
 import net.swordie.ms.client.jobs.nova.AngelicBuster;
 import net.swordie.ms.client.party.Party;
 import net.swordie.ms.client.party.PartyMember;
@@ -1497,6 +1498,7 @@ public class Field {
             boolean buffed = isChannelField()
                     && getChannel() > GameConstants.CHANNELS_PER_WORLD - GameConstants.BUFFED_CHANNELS;
             int currentMobs = getMobs().size();
+            int mobCapacity = getEffectiveMobCapacity();
             List<MobGen> shuffledMobs = new ArrayList<>(getMobGens());
             // shuffle so the mobs spawn on random positions, instead of a fixed order
             Collections.shuffle(shuffledMobs);
@@ -1505,7 +1507,7 @@ public class Field {
                     mg.spawnMob(buffed);
                     currentMobs++;
                     if ((getInfo().getFieldLimit() & FieldOption.NoMobCapacityLimit.getVal()) == 0
-                            && currentMobs > getInfo().getFixedMobCapacity()) {
+                            && currentMobs > mobCapacity) {
                         break;
                     }
                 }
@@ -1529,6 +1531,22 @@ public class Field {
 
     public boolean isChannelField() {
         return isChannelField;
+    }
+
+    public int getEffectiveMobCapacity() {
+        int baseCapacity = getInfo().getFixedMobCapacity();
+        if (baseCapacity <= 0) {
+            return baseCapacity;
+        }
+        return Math.max(baseCapacity, (int) Math.ceil(baseCapacity * getMonolithRateMultiplier()));
+    }
+
+    public double getMonolithRateMultiplier() {
+        return getSummons().stream()
+                .filter(summon -> summon.getSkillID() == ItemSkillHandler.MONOLITH)
+                .mapToDouble(summon -> summon.getChr() != null && summon.getChr().isAdminInvincible() ? 3D : 1.75D)
+                .max()
+                .orElse(1D);
     }
 
     public void setChannelField(boolean channelField) {
