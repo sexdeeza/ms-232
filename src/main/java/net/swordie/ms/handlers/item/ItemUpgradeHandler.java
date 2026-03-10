@@ -429,11 +429,12 @@ public class ItemUpgradeHandler {
             return;
         }
 
-        int targetStars = getSetStarForceScrollTarget(scroll.getItemId());
+        int scrollId = scroll.getItemId();
+        int targetStars = getSetStarForceScrollTarget(scrollId);
         if (targetStars > 0) {
             Equip eq = (Equip) equip;
-            int maxReqLevel = getSetStarForceScrollMaxReqLevel(scroll.getItemId());
-            if (requiresUntradableSetStarForceScroll(scroll.getItemId())) {
+            int maxReqLevel = getSetStarForceScrollMaxReqLevel(scrollId);
+            if (requiresUntradableSetStarForceScroll(scrollId)) {
                 boolean untradable = eq.isTradeBlock()
                         || eq.isEquipTradeBlock()
                         || eq.hasAttribute(EquipAttribute.Untradable);
@@ -481,6 +482,51 @@ public class ItemUpgradeHandler {
             }
 
             chr.write(FieldPacket.showItemUpgradeEffect(chr.getId(), true, false, scroll.getItemId(), eq.getItemId(), false));
+            chr.consumeItem(scroll);
+            return;
+        }
+
+        if (scrollId == 2644006 || scrollId == 2644007) {
+            Equip eq = (Equip) equip;
+            if (eq.getBaseStat(tuc) > 0) {
+                chr.chatMessage("This scroll can only be used on equipment with no remaining upgrades.");
+                chr.dispose();
+                return;
+            }
+            if (eq.getReqLevel() + eq.getiIncReq() > 200) {
+                chr.chatMessage("Equipment level does not meet scroll requirements.");
+                chr.dispose();
+                return;
+            }
+            int newStars = eq.getChuc() + 1;
+            if (newStars > 23) {
+                chr.chatMessage("This item cannot exceed 23 Star Force with this scroll.");
+                chr.dispose();
+                return;
+            }
+            if (GameConstants.getMaxStars(eq) < newStars) {
+                chr.chatMessage("This item cannot reach the target Star Force.");
+                chr.dispose();
+                return;
+            }
+
+            boolean success = Util.succeedProp(ItemData.getItemInfoByID(scrollId).getScrollStats().getOrDefault(ScrollStat.success, 100));
+            if (success) {
+                eq.setChuc((short) newStars);
+                eq.updateToChar(chr);
+
+                if (JobConstants.isZero(chr.getJob()) && ItemConstants.isLongOrBigSword(eq.getItemId())) {
+                    int otherEquipPos = Math.abs(equipPos) == 10 ? 11 : 10;
+                    Equip otherEquip = (Equip) chr.getEquippedInventory().getItemBySlot(otherEquipPos);
+                    otherEquip.copySecondaryStatsFrom(eq);
+                    otherEquip.updateToChar(chr);
+                    chr.write(ZeroPool.egoEquipComplete(true, true));
+                }
+            } else if (JobConstants.isZero(chr.getJob()) && ItemConstants.isLongOrBigSword(eq.getItemId())) {
+                chr.write(ZeroPool.egoEquipComplete(false, true));
+            }
+
+            chr.write(FieldPacket.showItemUpgradeEffect(chr.getId(), success, false, scrollId, eq.getItemId(), false));
             chr.consumeItem(scroll);
             return;
         }
