@@ -5879,6 +5879,10 @@ public class Char {
         return isInvincible || hasInvincibilityCTS();
     }
 
+    public boolean isAdminInvincible() {
+        return isInvincible;
+    }
+
     public void setInvincible(boolean invincible) {
         isInvincible = invincible;
     }

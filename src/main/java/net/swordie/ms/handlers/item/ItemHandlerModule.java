@@ -812,7 +812,7 @@ public class ItemHandlerModule {
 
         var rng = Util.getRandom(0, 1000);
 
-        var success = rng < successProp;
+        var success = chr.isAdminInvincible() || rng < successProp;
         boolean boom = rng < successProp + destroyProp; // also includes success, but that's checked first
         boolean canDegrade = equip.getInfo().isSuperiorEqp() ? equip.getChuc() > 0 : equip.getChuc() > 10 && equip.getChuc() % 5 != 0;
         if (success) {
@@ -892,12 +892,13 @@ public class ItemHandlerModule {
 
         var rng = Util.getRandom(0, 1000);
 
-        var success = rng < successProp;
+        var success = chr.isAdminInvincible() || rng < successProp;
         boolean boom = rng < successProp + destroyProp; // also includes success, but that's checked first
         boolean canDegrade = equip.getInfo().isSuperiorEqp() ? equip.getChuc() > 0 : equip.getChuc() > 10 && equip.getChuc() % 5 != 0;
         if (success) {
             equip.setChuc((short) (equip.getChuc() + 1));
             equip.setDropStreak(0);
+            boom = false;
         } else if (boom) {
             equip.setChuc((short) 0);
             if (ItemConstants.isLongOrBigSword(equip.getItemId())) {

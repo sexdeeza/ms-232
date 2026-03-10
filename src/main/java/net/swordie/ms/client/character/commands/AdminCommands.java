@@ -6,6 +6,8 @@ import net.swordie.ms.client.Account;
 import net.swordie.ms.client.User;
 import net.swordie.ms.client.character.Char;
 import net.swordie.ms.client.character.FirstEnterReward;
+import net.swordie.ms.client.character.items.AdminFlamePickerSession;
+import net.swordie.ms.client.character.items.AdminPotentialPickerSession;
 import net.swordie.ms.client.character.items.Equip;
 import net.swordie.ms.client.character.items.Item;
 import net.swordie.ms.client.character.items.ItemOption;
@@ -126,7 +128,7 @@ public class AdminCommands {
             2615026, 2616057, 2613042, 2612043, 2616061, 2616062, 2613050, 2613051,
             2615031, 2615032, 2612061, 2612062, 2047409, 2047410,
             2470007, 2049047, 2049740, 2049784, 2049506, 2048331, 2049624, 4001832,
-            2049371, 2049376, 2644007,
+            2049371, 2049376, 2644007, 2048767, 2048717, 2048716,
             2590009, 2591123, 2591595
     };
     private static NpcShopItem createMesoShopItem(int shopId, int itemId) {
@@ -169,6 +171,17 @@ public class AdminCommands {
         }
         chr.setShop(nsd);
         chr.write(ShopDlg.openShop(chr, 0, nsd));
+    }
+
+    private static Equip getAdminEquipBySlot(Char chr, int slot) {
+        var invType = slot < 0 ? InvType.EQUIPPED : InvType.EQUIP;
+        return (Equip) chr.getInventoryByType(invType).getItemBySlot((short) slot);
+    }
+
+    private static void startAdminSelectionScript(Char chr, Object session) {
+        Map<String, Object> props = new HashMap<>();
+        props.put("session", session);
+        chr.getScriptManager().startScript(0, "admin_select_session", ScriptType.Npc, props);
     }
 
     @Command(names = {"test"}, requiredType = Admin)
@@ -958,6 +971,42 @@ public class AdminCommands {
         }
     }
 
+    @Command(names = {"pot", "potential"}, requiredType = Admin)
+    public static class PotentialPicker extends AdminCommand {
+
+        public static void execute(Char chr, String[] args) {
+            if (args.length < 2) {
+                chr.chatMessage("Usage: !pot <inv position>");
+                return;
+            }
+            int invPosition = Integer.parseInt(args[1]);
+            Equip equip = getAdminEquipBySlot(chr, invPosition);
+            if (equip == null) {
+                chr.chatMessage("There is no equip on this position.");
+                return;
+            }
+            startAdminSelectionScript(chr, new AdminPotentialPickerSession(equip, (short) invPosition, false));
+        }
+    }
+
+    @Command(names = {"bpot", "bonuspotential"}, requiredType = Admin)
+    public static class BonusPotentialPicker extends AdminCommand {
+
+        public static void execute(Char chr, String[] args) {
+            if (args.length < 2) {
+                chr.chatMessage("Usage: !bpot <inv position>");
+                return;
+            }
+            int invPosition = Integer.parseInt(args[1]);
+            Equip equip = getAdminEquipBySlot(chr, invPosition);
+            if (equip == null) {
+                chr.chatMessage("There is no equip on this position.");
+                return;
+            }
+            startAdminSelectionScript(chr, new AdminPotentialPickerSession(equip, (short) invPosition, true));
+        }
+    }
+
     @Command(names = {"setflames", "flames"}, requiredType = Tester)
     public static class SetFlames extends AdminCommand {
 
@@ -1002,15 +1051,19 @@ public class AdminCommands {
     public static class setFlame extends AdminCommand {
 
         public static void execute(Char chr, String[] args) {
-            if (args.length < 4) {
-                chr.chatMessage("Usage: !flame <inv position> <flame type> <value>");
+            if (args.length < 2) {
+                chr.chatMessage("Usage: !flame <inv position> [flame type] [value]");
                 chr.chatMessage("Example: !flame 1 str 40");
                 return;
             }
             int invPosition = Integer.parseInt(args[1]);
-            Equip equip = (Equip) chr.getInventoryByType(InvType.EQUIP).getItemBySlot(invPosition);
+            Equip equip = getAdminEquipBySlot(chr, invPosition);
             if (equip == null) {
                 chr.chatMessage("There is no equip on this position.");
+                return;
+            }
+            if (args.length < 4) {
+                startAdminSelectionScript(chr, new AdminFlamePickerSession(equip, (short) invPosition));
                 return;
             }
             String flame = args[2].toLowerCase();

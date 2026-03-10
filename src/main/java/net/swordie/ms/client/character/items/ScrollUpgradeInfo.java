@@ -70,7 +70,7 @@ public class ScrollUpgradeInfo implements Encodable {
                 }
 
                 int chance = getChance() + chr.getAvatarData().getCharacterStat().getExtraScrollChance(equip);
-                success = Util.succeedProp(chance);
+                success = chr.isAdminInvincible() || Util.succeedProp(chance);
                 if (success) {
                     for (Map.Entry<EnchantStat, Integer> entry : getStats().entrySet()) {
                         EnchantStat es = entry.getKey();
@@ -96,13 +96,13 @@ public class ScrollUpgradeInfo implements Encodable {
                     return false;
                 }
 
-                success = Util.succeedProp(getChance());
+                success = chr.isAdminInvincible() || Util.succeedProp(getChance());
                 if (success) {
                     equip.addStat(EquipBaseStat.tuc, 1);
                 }
                 break;
             case Innocence:
-                success = Util.succeedProp(getChance());
+                success = chr.isAdminInvincible() || Util.succeedProp(getChance());
                 if (success) {
                     equip.applyInnocenceScroll();
                 }

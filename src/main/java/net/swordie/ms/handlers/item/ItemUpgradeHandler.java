@@ -234,7 +234,7 @@ public class ItemUpgradeHandler {
                 return;
             }
 
-            boolean success = Util.succeedProp(vals.getOrDefault(ScrollStat.success, 100));
+            boolean success = chr.isAdminInvincible() || Util.succeedProp(vals.getOrDefault(ScrollStat.success, 100));
             Equip oldEquip = blackFlame && success ? equip.deepCopy() : null;
             Equip otherEquip = null;
 
@@ -542,7 +542,7 @@ public class ItemUpgradeHandler {
                 return;
             }
 
-            boolean success = Util.succeedProp(ItemData.getItemInfoByID(scrollId).getScrollStats().getOrDefault(ScrollStat.success, 100));
+            boolean success = chr.isAdminInvincible() || Util.succeedProp(ItemData.getItemInfoByID(scrollId).getScrollStats().getOrDefault(ScrollStat.success, 100));
             if (success) {
                 eq.setChuc((short) newStars);
                 eq.updateToChar(chr);
@@ -673,7 +673,7 @@ public class ItemUpgradeHandler {
                     + chr.getAvatarData().getCharacterStat().getExtraScrollChance(equip);
             int curse = vals.getOrDefault(ScrollStat.cursed, 0);
 
-            success = Util.succeedProp(successChance);
+            success = chr.isAdminInvincible() || Util.succeedProp(successChance);
             if (success) {
                 if (isSet12StarForceScroll) {
                     equip.setChuc((short) 12, false);
@@ -821,7 +821,7 @@ public class ItemUpgradeHandler {
         Map<ScrollStat, Integer> vals = ItemData.getItemInfoByID(scrollID).getScrollStats();
         int chance = vals.getOrDefault(ScrollStat.success, 100);
         int curse = vals.getOrDefault(ScrollStat.cursed, 0);
-        boolean success = Util.succeedProp(chance);
+        boolean success = chr.isAdminInvincible() || Util.succeedProp(chance);
         if (success) {
             short val;
             int thirdLineChance = ItemConstants.THIRD_LINE_CHANCE;
@@ -915,7 +915,7 @@ public class ItemUpgradeHandler {
         }
 
         int successChance = ItemData.getItemInfoByID(itemID).getScrollStats().getOrDefault(ScrollStat.success, 100);
-        boolean success = Util.succeedProp(successChance);
+        boolean success = chr.isAdminInvincible() || Util.succeedProp(successChance);
         if (success) {
             switch (itemID / 100) {
                 case 20483: // Equipment bonus stamps
@@ -966,7 +966,7 @@ public class ItemUpgradeHandler {
         }
 
         int successChance = ItemData.getItemInfoByID(itemID).getScrollStats().getOrDefault(ScrollStat.success, 100);
-        boolean success = Util.succeedProp(successChance);
+        boolean success = chr.isAdminInvincible() || Util.succeedProp(successChance);
         if (success) {
             switch (itemID / 100) {
                 case 20495: // Equipment stamps
@@ -1016,7 +1016,7 @@ public class ItemUpgradeHandler {
         Map<ScrollStat, Integer> vals = ItemData.getItemInfoByID(scrollID).getScrollStats();
         int chance = vals.getOrDefault(ScrollStat.success, 100);
         int curse = vals.getOrDefault(ScrollStat.cursed, 0);
-        success = Util.succeedProp(chance);
+        success = chr.isAdminInvincible() || Util.succeedProp(chance);
         if (success) {
             short val;
             int thirdLineChance = ItemConstants.THIRD_LINE_CHANCE;
