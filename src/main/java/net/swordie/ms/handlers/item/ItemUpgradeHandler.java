@@ -8,6 +8,7 @@ import net.swordie.ms.connection.InPacket;
 import net.swordie.ms.connection.packet.WvsContext;
 import net.swordie.ms.connection.packet.ZeroPool;
 import net.swordie.ms.connection.packet.field.FieldPacket;
+import net.swordie.ms.constants.GameConstants;
 import net.swordie.ms.constants.ItemConstants;
 import net.swordie.ms.constants.JobConstants;
 import net.swordie.ms.enums.*;
@@ -74,6 +75,32 @@ public class ItemUpgradeHandler {
                 || scrollID == ItemConstants.INCREDIBLE_CHAOS_SCROLL_OF_GOODNESS_40
                 || scrollID == ItemConstants.INCREDIBLE_CHAOS_SCROLL_OF_GOODNESS_50
                 || scrollID == ItemConstants.INCREDIBLE_CHAOS_SCROLL_OF_GOODNESS_60;
+    }
+
+    private static int getSetStarForceScrollTarget(int scrollID) {
+        return switch (scrollID) {
+            case 2049374, 2049375, 2049370, 2049381, 2644017 -> 12;
+            case 2049378, 2049379, 2644001, 2049372, 2049398 -> 15;
+            case 2049393, 2049394, 2644000, 2644002, 2644004, 2049371 -> 17;
+            case 2049392, 2644016, 2049376 -> 20;
+            case 2049373 -> 10;
+            case 2049391 -> 7;
+            case 2049395 -> 5;
+            default -> 0;
+        };
+    }
+
+    private static int getSetStarForceScrollMaxReqLevel(int scrollID) {
+        return switch (scrollID) {
+            case 2049374, 2049381, 2049378, 2049393 -> 150;
+            case 2644017, 2049375, 2049379, 2644001, 2049398,
+                 2049394, 2644000, 2644002, 2644004, 2049392, 2644016 -> 160;
+            default -> 0;
+        };
+    }
+
+    private static boolean requiresUntradableSetStarForceScroll(int scrollID) {
+        return scrollID == 2644017;
     }
 
     private static int rollChaosStat(int scrollID, boolean noNegative, EquipBaseStat ebs) {
@@ -402,6 +429,62 @@ public class ItemUpgradeHandler {
             return;
         }
 
+        int targetStars = getSetStarForceScrollTarget(scroll.getItemId());
+        if (targetStars > 0) {
+            Equip eq = (Equip) equip;
+            int maxReqLevel = getSetStarForceScrollMaxReqLevel(scroll.getItemId());
+            if (requiresUntradableSetStarForceScroll(scroll.getItemId())) {
+                boolean untradable = eq.isTradeBlock()
+                        || eq.isEquipTradeBlock()
+                        || eq.hasAttribute(EquipAttribute.Untradable);
+                if (!untradable) {
+                    chr.chatMessage("This scroll can only be used on untradable equipment.");
+                    chr.dispose();
+                    return;
+                }
+            }
+            if (eq.getBaseStat(tuc) > 0) {
+                chr.chatMessage("This scroll can only be used on equipment with no remaining upgrades.");
+                chr.dispose();
+                return;
+            }
+            if (eq.getInfo().isSuperiorEqp()) {
+                chr.chatMessage("This scroll cannot be used on superior equipment.");
+                chr.dispose();
+                return;
+            }
+            if (maxReqLevel > 0 && eq.getReqLevel() + eq.getiIncReq() > maxReqLevel) {
+                chr.chatMessage("Equipment level does not meet scroll requirements.");
+                chr.dispose();
+                return;
+            }
+            if (eq.getChuc() > targetStars) {
+                chr.chatMessage("This item already has more than the target Star Force.");
+                chr.dispose();
+                return;
+            }
+            if (GameConstants.getMaxStars(eq) < targetStars) {
+                chr.chatMessage("This item cannot reach the target Star Force.");
+                chr.dispose();
+                return;
+            }
+
+            eq.setChuc((short) targetStars);
+            eq.updateToChar(chr);
+
+            if (JobConstants.isZero(chr.getJob()) && ItemConstants.isLongOrBigSword(eq.getItemId())) {
+                int otherEquipPos = Math.abs(equipPos) == 10 ? 11 : 10;
+                Equip otherEquip = (Equip) chr.getEquippedInventory().getItemBySlot(otherEquipPos);
+                otherEquip.copySecondaryStatsFrom(eq);
+                otherEquip.updateToChar(chr);
+                chr.write(ZeroPool.egoEquipComplete(true, true));
+            }
+
+            chr.write(FieldPacket.showItemUpgradeEffect(chr.getId(), true, false, scroll.getItemId(), eq.getItemId(), false));
+            chr.consumeItem(scroll);
+            return;
+        }
+
         boolean advanced = false;
         boolean safeguard = false;
 
@@ -470,75 +553,109 @@ public class ItemUpgradeHandler {
         Equip prevEquip = hadReturnScroll ? equip.deepCopy() : null;
         Map<ScrollStat, Integer> vals = ii.getScrollStats();
         if (vals.size() > 0) {
+            boolean isSet12StarForceScroll = scrollID == 2644017;
             boolean recover = vals.getOrDefault(ScrollStat.recover, 0) != 0;
             boolean reset = vals.getOrDefault(ScrollStat.reset, 0) + vals.getOrDefault(ScrollStat.perfectReset, 0) != 0;
-            if (equip.getBaseStat(tuc) <= 0 && (!recover && !reset)) {
+            if (isSet12StarForceScroll) {
+                boolean untradable = equip.isTradeBlock()
+                        || equip.isEquipTradeBlock()
+                        || equip.hasAttribute(EquipAttribute.Untradable);
+                if (!untradable) {
+                    chr.chatMessage("This scroll can only be used on untradable equipment.");
+                    chr.dispose();
+                    return;
+                }
+                if (equip.getBaseStat(tuc) > 0) {
+                    chr.chatMessage("This scroll can only be used on equipment with no remaining upgrades.");
+                    chr.dispose();
+                    return;
+                }
+                if (equip.getInfo().isSuperiorEqp()) {
+                    chr.chatMessage("This scroll cannot be used on superior equipment.");
+                    chr.dispose();
+                    return;
+                }
+                if (equip.getChuc() > 12) {
+                    chr.chatMessage("This item already has more than 12 Star Force.");
+                    chr.dispose();
+                    return;
+                }
+                if (GameConstants.getMaxStars(equip) < 12) {
+                    chr.chatMessage("This item cannot reach 12 Star Force.");
+                    chr.dispose();
+                    return;
+                }
+            } else if (equip.getBaseStat(tuc) <= 0 && (!recover && !reset)) {
                 chr.chatMessage("This item cannot be scrolled.");
                 chr.dispose();
                 return;
             }
-            boolean useTuc = !recover && !reset;
+            boolean useTuc = !recover && !reset && !isSet12StarForceScroll;
             int successChance = vals.getOrDefault(ScrollStat.success, 100)
                     + chr.getAvatarData().getCharacterStat().getExtraScrollChance(equip);
             int curse = vals.getOrDefault(ScrollStat.cursed, 0);
 
             success = Util.succeedProp(successChance);
             if (success) {
-                boolean chaos = vals.containsKey(ScrollStat.randStat);
-                if (chaos) {
-                    boolean noNegative = vals.containsKey(ScrollStat.noNegative);
-                    Map<EquipBaseStat, Integer> chaosRolls = new java.util.EnumMap<>(EquipBaseStat.class);
-                    boolean hasChaosTarget;
-                    boolean hasNonZeroChange;
-                    do {
-                        chaosRolls.clear();
-                        hasChaosTarget = false;
-                        hasNonZeroChange = false;
-                        for (EquipBaseStat ebs : ScrollStat.getRandStats()) {
-                            int cur = (int) equip.getBaseStat(ebs);
-                            if (cur == 0) {
-                                continue;
-                            }
-                            hasChaosTarget = true;
-                            int randStat = rollChaosStat(scrollID, noNegative, ebs);
-                            chaosRolls.put(ebs, randStat);
-                            if (randStat != 0) {
-                                hasNonZeroChange = true;
-                            }
-                        }
-                    } while (hasChaosTarget && !hasNonZeroChange);
-
-                    for (Map.Entry<EquipBaseStat, Integer> entry : chaosRolls.entrySet()) {
-                        int randStat = entry.getValue();
-                        equip.addStat(entry.getKey(), randStat);
-                    }
-                }
-                if (recover) {
-                    Equip fullTucEquip = ItemData.getEquipDeepCopy(equip.getItemId(), false);
-                    int maxTuc = fullTucEquip.getTuc() + equip.getIuc();
-                    if (equip.getTuc() + equip.getCuc() >= maxTuc) {
-                        chr.chatMessage("This item has no open slots to recover.");
-                    } else {
-                        equip.addStat(tuc, 1);
-                    }
-                } else if (reset) {
-                    equip.resetStats();
-
-                    if (JobConstants.isZero(chr.getJob()) && ItemConstants.isLongOrBigSword(equip.getItemId())) {
-                        int otherEquipPos = Math.abs(ePos) == 10 ? 11 : 10;
-                        Equip otherEquip = (Equip) chr.getEquippedInventory().getItemBySlot(otherEquipPos);
-                        otherEquip.resetStats();
-                    }
-
+                if (isSet12StarForceScroll) {
+                    equip.setChuc((short) 12, false);
                 } else {
-                    for (Map.Entry<ScrollStat, Integer> entry : vals.entrySet()) {
-                        ScrollStat ss = entry.getKey();
-                        int val = entry.getValue();
-                        if (ss.getEquipStat() != null) {
-                            equip.addStat(ss.getEquipStat(), val);
+                    boolean chaos = vals.containsKey(ScrollStat.randStat);
+                    if (chaos) {
+                        boolean noNegative = vals.containsKey(ScrollStat.noNegative);
+                        Map<EquipBaseStat, Integer> chaosRolls = new java.util.EnumMap<>(EquipBaseStat.class);
+                        boolean hasChaosTarget;
+                        boolean hasNonZeroChange;
+                        do {
+                            chaosRolls.clear();
+                            hasChaosTarget = false;
+                            hasNonZeroChange = false;
+                            for (EquipBaseStat ebs : ScrollStat.getRandStats()) {
+                                int cur = (int) equip.getBaseStat(ebs);
+                                if (cur == 0) {
+                                    continue;
+                                }
+                                hasChaosTarget = true;
+                                int randStat = rollChaosStat(scrollID, noNegative, ebs);
+                                chaosRolls.put(ebs, randStat);
+                                if (randStat != 0) {
+                                    hasNonZeroChange = true;
+                                }
+                            }
+                        } while (hasChaosTarget && !hasNonZeroChange);
+
+                        for (Map.Entry<EquipBaseStat, Integer> entry : chaosRolls.entrySet()) {
+                            int randStat = entry.getValue();
+                            equip.addStat(entry.getKey(), randStat);
                         }
                     }
-                    applyCustomXScrollStats(equip, scrollID);
+                    if (recover) {
+                        Equip fullTucEquip = ItemData.getEquipDeepCopy(equip.getItemId(), false);
+                        int maxTuc = fullTucEquip.getTuc() + equip.getIuc();
+                        if (equip.getTuc() + equip.getCuc() >= maxTuc) {
+                            chr.chatMessage("This item has no open slots to recover.");
+                        } else {
+                            equip.addStat(tuc, 1);
+                        }
+                    } else if (reset) {
+                        equip.resetStats();
+
+                        if (JobConstants.isZero(chr.getJob()) && ItemConstants.isLongOrBigSword(equip.getItemId())) {
+                            int otherEquipPos = Math.abs(ePos) == 10 ? 11 : 10;
+                            Equip otherEquip = (Equip) chr.getEquippedInventory().getItemBySlot(otherEquipPos);
+                            otherEquip.resetStats();
+                        }
+
+                    } else {
+                        for (Map.Entry<ScrollStat, Integer> entry : vals.entrySet()) {
+                            ScrollStat ss = entry.getKey();
+                            int val = entry.getValue();
+                            if (ss.getEquipStat() != null) {
+                                equip.addStat(ss.getEquipStat(), val);
+                            }
+                        }
+                        applyCustomXScrollStats(equip, scrollID);
+                    }
                 }
                 if (useTuc) {
                     equip.addStat(tuc, -1);
