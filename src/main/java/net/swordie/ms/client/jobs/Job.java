@@ -2597,9 +2597,15 @@ public abstract class Job {
                     // Update Shield
                     opt.nOption = Math.max(0, opt.nOption - hitInfo.hpDamage);
                     if (opt.nOption <= 0) {
+                        if (opt.rOption == ItemSkillHandler.DAWN_SHIELD_BUFF) {
+                            chr.write(UserLocal.trueNobilityShield(0));
+                        }
                         removedSkills.add(opt.rOption);
                     } else {
                         tsm.updateBuff(cts, opt);
+                        if (opt.rOption == ItemSkillHandler.DAWN_SHIELD_BUFF) {
+                            chr.write(UserLocal.trueNobilityShield(opt.nOption));
+                        }
                     }
                 }
                 removedSkills.forEach(tsm::removeStatsBySkill);

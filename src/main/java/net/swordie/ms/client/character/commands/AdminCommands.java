@@ -3138,6 +3138,78 @@ public class AdminCommands {
         }
     }
 
+    @Command(names = {"skilldump", "skillwz", "sdump"}, requiredType = Tester)
+    public static class SkillDump extends AdminCommand {
+
+        public static void execute(Char chr, String[] args) {
+            if (args.length < 2 || !Util.isNumber(args[1])) {
+                chr.chatMessage(AdminChat, "Usage: !skilldump <skillId>");
+                return;
+            }
+            int skillId = Integer.parseInt(args[1]);
+            SkillInfo si = SkillData.getSkillInfoById(skillId);
+            SkillStringInfo ssi = StringData.getSkillStringById(skillId);
+            if (si == null) {
+                chr.chatMessage(AdminChat, "No skill data for " + skillId);
+                return;
+            }
+
+            chr.chatMessage(AdminChat, String.format("Skill %d | %s", skillId, ssi != null ? ssi.getName() : "Unknown"));
+            chr.chatMessage(AdminChat, String.format(
+                    "root=%d maxLevel=%d masterLevel=%d fixLevel=%d type=%d infoType=%d summon=%s affectedArea=%s finalAttack=%s",
+                    si.getRootId(), si.getMaxLevel(), si.getMasterLevel(), si.getFixLevel(), si.getType(), si.getInfoType(),
+                    si.isSummon(), si.isAffectedArea(), si.isFinalAttack()
+            ));
+
+            if (ssi != null) {
+                if (ssi.getDesc() != null && !ssi.getDesc().isEmpty()) {
+                    chr.chatMessage(AdminChat, "desc: " + ssi.getDesc());
+                }
+                if (ssi.getH() != null && !ssi.getH().isEmpty()) {
+                    chr.chatMessage(AdminChat, "h: " + ssi.getH());
+                }
+            }
+
+            if (!si.getSkillStatInfo().isEmpty()) {
+                chr.chatMessage(AdminChat, "skillStatInfo:");
+                si.getSkillStatInfo().entrySet().stream()
+                        .sorted(Map.Entry.comparingByKey(Comparator.comparing(Enum::name)))
+                        .forEach(entry -> chr.chatMessage(AdminChat, String.format("  %s = %s", entry.getKey(), entry.getValue())));
+            }
+
+            if (!si.getOldSkillStats().isEmpty()) {
+                chr.chatMessage(AdminChat, "oldSkillStats:");
+                si.getOldSkillStats().entrySet().stream()
+                        .sorted(Map.Entry.comparingByKey())
+                        .forEach(levelEntry -> {
+                            chr.chatMessage(AdminChat, "  level " + levelEntry.getKey() + ":");
+                            levelEntry.getValue().entrySet().stream()
+                                    .sorted(Map.Entry.comparingByKey(Comparator.comparing(Enum::name)))
+                                    .forEach(entry -> chr.chatMessage(AdminChat, String.format("    %s = %s", entry.getKey(), entry.getValue())));
+                        });
+            }
+
+            if (!si.getRects().isEmpty()) {
+                chr.chatMessage(AdminChat, "rects: " + si.getRects());
+            }
+            if (!si.getReqSkills().isEmpty()) {
+                chr.chatMessage(AdminChat, "reqSkills: " + si.getReqSkills());
+            }
+            if (!si.getAddAttackSkills().isEmpty()) {
+                chr.chatMessage(AdminChat, "addAttackSkills: " + si.getAddAttackSkills());
+            }
+            if (!si.getRandomSkills().isEmpty()) {
+                chr.chatMessage(AdminChat, "randomSkills: " + si.getRandomSkills());
+            }
+            if (!si.getExtraSkillInfo().isEmpty()) {
+                chr.chatMessage(AdminChat, "extraSkillInfo: " + si.getExtraSkillInfo());
+            }
+            if (!si.getSecondAtomInfos().isEmpty()) {
+                chr.chatMessage(AdminChat, "secondAtomInfos: " + si.getSecondAtomInfos().size());
+            }
+        }
+    }
+
     @Command(names = {"debug", "debugmode"}, requiredType = Tester)
     public static class DebugMode extends AdminCommand {
 

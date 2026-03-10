@@ -12,6 +12,7 @@ import net.swordie.ms.client.character.skills.info.SkillUseInfo;
 import net.swordie.ms.client.character.skills.temp.CharacterTemporaryStat;
 import net.swordie.ms.client.character.skills.temp.TemporaryStatManager;
 import net.swordie.ms.connection.InPacket;
+import net.swordie.ms.connection.packet.UserLocal;
 import net.swordie.ms.enums.AssistType;
 import net.swordie.ms.enums.MoveAbility;
 import net.swordie.ms.life.Summon;
@@ -167,11 +168,10 @@ public class ItemSkillHandler implements ICommonSkillHandler {
 
     @Override
     public void handleRemoveCTS(CharacterTemporaryStat cts, Option o) {
-        if (cts == CharacterTemporaryStat.ProtectiveShield && o != null && o.rOption == DAWN_SHIELD_BUFF) {
-            if (chr.hasSkill(DIVINE_GUARDIAN)) {
-                applyGenericItemStatBuff(chr.getTemporaryStatManager(), DIVINE_GUARDIAN, chr.getSkillLevel(DIVINE_GUARDIAN));
-                chr.getTemporaryStatManager().sendSetStatPacket();
-            }
+        if (cts == CharacterTemporaryStat.IndieProtectiveShield && o != null && o.rOption == DAWN_SHIELD_BUFF) {
+            chr.write(UserLocal.trueNobilityShield(0));
+            applyGenericItemStatBuff(chr.getTemporaryStatManager(), DIVINE_GUARDIAN, 1);
+            chr.getTemporaryStatManager().sendSetStatPacket();
         }
     }
 
@@ -215,7 +215,8 @@ public class ItemSkillHandler implements ICommonSkillHandler {
         if (shieldAmount <= 0) {
             shieldAmount = chr.getHPPerc(20);
         }
-        tsm.putCharacterStatValue(CharacterTemporaryStat.ProtectiveShield, new Option(shieldAmount, DAWN_SHIELD_BUFF, tOpt));
+        tsm.putCharacterStatValue(CharacterTemporaryStat.IndieProtectiveShield, new Option(shieldAmount, DAWN_SHIELD_BUFF, tOpt));
+        chr.write(UserLocal.trueNobilityShield(shieldAmount));
     }
 
     private void applyGenericItemStatBuff(TemporaryStatManager tsm, int skillId, int slv) {
@@ -233,6 +234,7 @@ public class ItemSkillHandler implements ICommonSkillHandler {
         putIfPositive(tsm, CharacterTemporaryStat.IndieDEF, skillId, tOpt, getPositiveSkillValue(si, slv, SkillStat.indiePdd, SkillStat.pdd, SkillStat.pddX));
         putIfPositive(tsm, CharacterTemporaryStat.IndieStance, skillId, tOpt, getPositiveSkillValue(si, slv, SkillStat.indieStance, SkillStat.stanceProp));
         putIfPositive(tsm, CharacterTemporaryStat.IndieDamR, skillId, tOpt, getPositiveSkillValue(si, slv, SkillStat.indieDamR, SkillStat.damR));
+        putIfPositive(tsm, CharacterTemporaryStat.DamageReduce, skillId, tOpt, getPositiveSkillValue(si, slv, SkillStat.x));
         putIfPositive(tsm, CharacterTemporaryStat.IndieIgnoreMobpdpR, skillId, tOpt, getPositiveSkillValue(si, slv, SkillStat.indieIgnoreMobpdpR));
         putIfPositive(tsm, CharacterTemporaryStat.IndieCr, skillId, tOpt, getPositiveSkillValue(si, slv, SkillStat.indieCr, SkillStat.cr));
     }
