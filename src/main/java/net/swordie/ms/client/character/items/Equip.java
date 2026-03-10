@@ -1473,9 +1473,7 @@ public class Equip extends Item {
     }
 
     public void recalcEnchantmentStats() {
-        if (getChuc() >= GameConstants.getMaxStars(this)) {
-            setHyperUpgrade((short) 0);
-        } else if (getHyperUpgrade() == 0) {
+        if (getHyperUpgrade() == 0) {
             setHyperUpgrade((short) ItemState.AmazingHyperUpgradeChecked.getVal());
         }
 

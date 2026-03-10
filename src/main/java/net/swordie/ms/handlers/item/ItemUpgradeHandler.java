@@ -186,7 +186,10 @@ public class ItemUpgradeHandler {
     }
 
 
-    @Handler(op = InHeader.USER_EX_ITEM_UPGRADE_ITEM_USE_REQUEST)
+    @Handler(ops = {
+            InHeader.USER_EX_ITEM_UPGRADE_ITEM_USE_REQUEST,
+            InHeader.USER_KARMA_CONSUME_ITEM_USE_REQUEST
+    })
     public static void handleUserExItemUpgradeItemUseRequest(Client c, InPacket inPacket) {
         inPacket.decodeInt(); //tick
         var usePosition = inPacket.decodeShort();
