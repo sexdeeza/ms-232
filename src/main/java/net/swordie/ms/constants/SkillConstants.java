@@ -4530,7 +4530,8 @@ public class SkillConstants {
     }
 
     public static boolean isSeparateIncapacitateSkillId(int skillId) { // Skills that have their own specific stun cooldown.
-        return skillId == Zero.CRITICAL_BIND;
+        return skillId == Zero.CRITICAL_BIND
+                || skillId == net.swordie.ms.client.jobs.common.ItemSkillHandler.LUCIDS_NIGHTMARE;
     }
 
     public static boolean isBodyAttack(int skillId) {

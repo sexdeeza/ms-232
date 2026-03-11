@@ -15,9 +15,16 @@ import net.swordie.ms.connection.InPacket;
 import net.swordie.ms.connection.packet.UserLocal;
 import net.swordie.ms.enums.AssistType;
 import net.swordie.ms.enums.MoveAbility;
+import net.swordie.ms.life.mob.Mob;
+import net.swordie.ms.life.mob.MobStat;
+import net.swordie.ms.life.mob.MobTemporaryStat;
 import net.swordie.ms.life.Summon;
 import net.swordie.ms.loaders.SkillData;
+import net.swordie.ms.util.Rect;
 import net.swordie.ms.world.field.Field;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Created on 09/07/2021.
@@ -33,6 +40,8 @@ public class ItemSkillHandler implements ICommonSkillHandler {
     public static final int DIVINE_GUARDIAN = 80011249;
     public static final int DIVINE_SHIELD = 80011250;
     public static final int DIVINE_BRILLIANCE = 80011251;
+    public static final int RING_OF_TORMENT = 80011513;
+    public static final int LUCIDS_NIGHTMARE = 80011540;
     public static final int MONOLITH = 80011261;
     public static final int ELEMENTAL_SYLPH = 80001518;
     public static final int FLAME_SYLPH = 80001519;
@@ -98,6 +107,12 @@ public class ItemSkillHandler implements ICommonSkillHandler {
             case DIVINE_SHIELD:
             case DIVINE_BRILLIANCE:
                 applyGenericItemStatBuff(tsm, skillId, slv);
+                break;
+            case RING_OF_TORMENT:
+                applyRingOfTorment(tsm, skillId, slv);
+                break;
+            case LUCIDS_NIGHTMARE:
+                applyLucidsNightmare(skillUseInfo, skillId, slv);
                 break;
             case MONOLITH:
                 summon = Summon.getSummonByNoCTS(chr, skillId, slv);
@@ -238,6 +253,69 @@ public class ItemSkillHandler implements ICommonSkillHandler {
         putIfPositive(tsm, CharacterTemporaryStat.DamageReduce, skillId, tOpt, getPositiveSkillValue(si, slv, SkillStat.x));
         putIfPositive(tsm, CharacterTemporaryStat.IndieIgnoreMobpdpR, skillId, tOpt, getPositiveSkillValue(si, slv, SkillStat.indieIgnoreMobpdpR));
         putIfPositive(tsm, CharacterTemporaryStat.IndieCr, skillId, tOpt, getPositiveSkillValue(si, slv, SkillStat.indieCr, SkillStat.cr));
+    }
+
+    private void applyRingOfTorment(TemporaryStatManager tsm, int skillId, int slv) {
+        SkillInfo si = SkillData.getSkillInfoById(skillId);
+        int tOpt = si != null ? getPositiveSkillValue(si, slv, SkillStat.time) : 0;
+        if (tOpt <= 0) {
+            tOpt = 15 * 60;
+        }
+
+        int expR = si != null ? getPositiveSkillValue(si, slv, SkillStat.indieExp, SkillStat.expR) : 0;
+        if (expR <= 0) {
+            expR = 15;
+        }
+        tsm.putCharacterStatValue(CharacterTemporaryStat.IndieEXP, new Option(expR, skillId, tOpt));
+
+        int damPenalty = 30;
+        if (si != null) {
+            int configuredPenalty = getPositiveSkillValue(si, slv, SkillStat.indieDamR, SkillStat.damR, SkillStat.x);
+            if (configuredPenalty > 0) {
+                damPenalty = configuredPenalty;
+            }
+        }
+        tsm.putCharacterStatValue(CharacterTemporaryStat.IndieDamR, new Option(-damPenalty, skillId, tOpt));
+    }
+
+    private void applyLucidsNightmare(SkillUseInfo skillUseInfo, int skillId, int slv) {
+        SkillInfo si = SkillData.getSkillInfoById(skillId);
+        int stunDuration = si != null ? getPositiveSkillValue(si, slv, SkillStat.subTime, SkillStat.time, SkillStat.x) : 0;
+        if (stunDuration <= 0) {
+            stunDuration = 5;
+        }
+        Option o = new Option(1, skillId, stunDuration);
+        if (si != null) {
+            o.mobStunSkillCooldown = Math.max(0, si.getValue(SkillStat.v, slv));
+        }
+        Set<Mob> targets = new LinkedHashSet<>();
+        if (skillUseInfo != null && skillUseInfo.mobIds != null) {
+            for (int mobId : skillUseInfo.mobIds) {
+                Mob mob = (Mob) chr.getField().getLifeByObjectID(mobId);
+                if (mob != null) {
+                    targets.add(mob);
+                }
+            }
+        }
+        if (targets.isEmpty()) {
+            Rect area = null;
+            if (si != null && si.getRects() != null && !si.getRects().isEmpty()) {
+                area = chr.getRectAround(si.getFirstRect());
+            }
+            if (area == null) {
+                area = new Rect(chr.getPosition().getX() - 450, chr.getPosition().getY() - 300,
+                        chr.getPosition().getX() + 450, chr.getPosition().getY() + 300);
+            }
+            for (Mob mob : chr.getField().getMobs()) {
+                if (area.hasPositionInside(mob.getPosition())) {
+                    targets.add(mob);
+                }
+            }
+        }
+        for (Mob mob : targets) {
+            MobTemporaryStat mts = mob.getTemporaryStat();
+            mts.addStatOptionsAndBroadcast(chr, MobStat.Stun, o);
+        }
     }
 
     private void putIfPositive(TemporaryStatManager tsm, CharacterTemporaryStat cts, int skillId, int tOpt, int value) {
