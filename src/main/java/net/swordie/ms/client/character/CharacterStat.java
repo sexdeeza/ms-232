@@ -69,6 +69,7 @@ public class CharacterStat {
     private FileTime lastLogout;
     private int gachExp;
     private int honorExp;
+    private boolean cashPetPickUpOn = true;
     private FileTime nextAvailableFameTime;
     private FileTime lastLevelObtainedTime = FileTime.fromType(FileTime.Type.MAX_TIME);
 
@@ -410,6 +411,14 @@ public class CharacterStat {
         this.burning = burning;
     }
 
+    public boolean isCashPetPickUpOn() {
+        return cashPetPickUpOn;
+    }
+
+    public void setCashPetPickUpOn(boolean cashPetPickUpOn) {
+        this.cashPetPickUpOn = cashPetPickUpOn;
+    }
+
     public void setJob(int job) {
         this.job = job;
     }
@@ -688,4 +697,3 @@ public class CharacterStat {
         return extra + level / 10; // just ignore the .5% chance
     }
 }
-

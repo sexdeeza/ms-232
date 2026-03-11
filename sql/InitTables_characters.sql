@@ -480,6 +480,7 @@ create table characterstats
     lastlogout            datetime,
     gachexp               int,
     honorexp              int,
+    cashpetpickupon       boolean,
     nextavailablefametime datetime,
     lastlevelobtainedtime datetime,
     primary key (id),

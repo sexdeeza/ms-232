@@ -4202,6 +4202,7 @@ public class Char {
         }
 
         updatePetIgnoredItemList();
+        write(WvsContext.cashPetPickUpOnOffResult(false, isCashPetPickUpOn()));
     }
 
     public Pet getPetByIdx(int idx) {
@@ -6992,6 +6993,14 @@ public class Char {
     public void updatePetIgnoredItemList() {
         var ignoredItems = getIgnoredItems();
         // TODO: Fix this server side
+    }
+
+    public boolean isCashPetPickUpOn() {
+        return getAvatarData().getCharacterStat().isCashPetPickUpOn();
+    }
+
+    public void setCashPetPickUpOn(boolean cashPetPickUpOn) {
+        getAvatarData().getCharacterStat().setCashPetPickUpOn(cashPetPickUpOn);
     }
 
     public int getNewBagItemIndex(InvType invType) {

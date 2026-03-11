@@ -27,6 +27,8 @@ import net.swordie.ms.life.pet.PetSkill;
 import net.swordie.ms.loaders.SkillData;
 import net.swordie.ms.util.Position;
 import net.swordie.ms.world.field.Field;
+import net.swordie.orm.dao.CharDao;
+import net.swordie.orm.dao.SworDaoFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,6 +38,7 @@ import java.util.Set;
 public class PetHandler {
 
     private static final Logger log = LogManager.getLogger(PetHandler.class);
+    private static final CharDao charDao = (CharDao) SworDaoFactory.getByClass(Char.class);
 
 
     @Handler(op = InHeader.USER_ACTIVATE_PET_REQUEST)
@@ -114,12 +117,12 @@ public class PetHandler {
         inPacket.decodeInt(); // tick
         boolean on = inPacket.decodeByte() != 0;
         boolean channelChange = inPacket.decodeByte() != 0;
-        int attribute = 0;
         if (channelChange) {
-            attribute = inPacket.decodeInt();
+            inPacket.decodeInt();
         }
+        chr.setCashPetPickUpOn(on);
+        charDao.saveOrUpdate(chr);
         chr.write(WvsContext.cashPetPickUpOnOffResult(true, on));
-
     }
 
     @Handler(op = InHeader.PET_MOVE)
@@ -171,6 +174,9 @@ public class PetHandler {
 //                om.increaseTrust();
             }
 
+            if (!chr.isCashPetPickUpOn()) {
+                return;
+            }
             boolean success = drop.canBePickedUpByPet() && drop.canBePickedUpBy(chr) && chr.addDrop(drop, true);
             if (success) {
                 field.removeDrop(dropID, chr.getId(), false, petID);
