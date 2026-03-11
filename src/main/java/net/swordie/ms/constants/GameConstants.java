@@ -22,7 +22,7 @@ public class GameConstants {
     public static final int COMBO_ORB_EXP_RATE = 1; // Note: MOB_EXP_RATE does not affect combo orbs
     public static final int MOB_NX_RATE = 1;
     public static final int MOB_DROP_RATE = 1;
-    public static final int MOB_MESO_RATE = 2;
+    public static final int MOB_MESO_RATE = 1;
     public static final long MAX_MONEY = 99_999_999_999L;
     public static final short DAMAGE_SKIN_MAX_SIZE = 100;
     public static final int MAX_PET_AMOUNT = 3;

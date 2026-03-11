@@ -74,10 +74,8 @@ public class AttackHandler {
         Field field = chr.getField();
 
         if (skillID != 0 && (!FieldConstants.isBypassFieldLimitCheckField(field.getId()) && (field.getInfo().getFieldLimit() & FieldOption.SkillLimit.getVal()) > 0
-                || (field.getInfo().getFieldLimit() & FieldOption.MoveSkillOnly.getVal()) > 0)
-                || attackInfo.skillId == SkillConstants.LEVEL_UP_DAMAGE_SKILL_ID) {
+                || (field.getInfo().getFieldLimit() & FieldOption.MoveSkillOnly.getVal()) > 0)) {
             // don't allow skills on maps where it's not allowed
-            // ignore the damage from the level up skill, instakills buffed mobs
             return;
         }
 
