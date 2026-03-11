@@ -1316,12 +1316,24 @@ public class Field {
         setBurningFieldLevel(getBurningFieldLevel() + 1);
     }
 
+    public void increaseBurningFieldLevelToMax() {
+        setBurningFieldLevel(GameConstants.BURNING_FIELD_MAX_LEVEL);
+    }
+
+    public int getMaxBurningFieldLevel() {
+        return GameConstants.BURNING_FIELD_MAX_LEVEL;
+    }
+
     private void decreaseBurningLevel() {
         setBurningFieldLevel(getBurningFieldLevel() - 1);
     }
 
-    private boolean canBeBurningField() {
+    public boolean canBeBurningField() {
         return isChannelField() && getMobGens().size() > 0;
+    }
+
+    public boolean canUseFireStarterRing() {
+        return canBeBurningField();
     }
 
     public void updateBurningFieldLevel() {

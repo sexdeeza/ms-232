@@ -205,11 +205,11 @@ public class GameConstants {
     public static final int LEVEL_RANGE_TO_SPAWN_RUNE = 20;
 
     // BurningField
-    public static final int BURNING_FIELD_MAX_LEVEL = 20; //Maximum Burning Field Level
-    public static final int BURNING_FIELD_LEVEL_ON_START = BURNING_FIELD_MAX_LEVEL; //Starts Burning Maps at BurningLevel 20
+    public static final int BURNING_FIELD_MAX_LEVEL = 10; // Maximum Burning Field Level
+    public static final int BURNING_FIELD_LEVEL_ON_START = BURNING_FIELD_MAX_LEVEL; // Starts Burning Maps at Burning Level 10
     public static final int BURNING_FIELD_TIMER = 15; // minutes
     public static final int BURNING_FIELD_MIN_MOB_LEVEL = 0; //Minimum Mob Level for the Field to become a Burning Field
-    public static final int BURNING_FIELD_BONUS_EXP_MULTIPLIER_PER_LEVEL = 5; // multiplied by the BurningField Level  =  Bonus Exp% given
+    public static final int BURNING_FIELD_BONUS_EXP_MULTIPLIER_PER_LEVEL = 10; // Burning Field Level * this constant = bonus EXP%
 
     // Exp Orb
     public static final int BLUE_EXP_ORB_ID = 2023484;

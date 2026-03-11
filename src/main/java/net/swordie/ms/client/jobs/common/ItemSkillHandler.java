@@ -40,6 +40,7 @@ public class ItemSkillHandler implements ICommonSkillHandler {
     public static final int DIVINE_GUARDIAN = 80011249;
     public static final int DIVINE_SHIELD = 80011250;
     public static final int DIVINE_BRILLIANCE = 80011251;
+    public static final int FIRESTARTER_RING = 80011492;
     public static final int RING_OF_TORMENT = 80011513;
     public static final int LUCIDS_NIGHTMARE = 80011540;
     public static final int MONOLITH = 80011261;
@@ -107,6 +108,9 @@ public class ItemSkillHandler implements ICommonSkillHandler {
             case DIVINE_SHIELD:
             case DIVINE_BRILLIANCE:
                 applyGenericItemStatBuff(tsm, skillId, slv);
+                break;
+            case FIRESTARTER_RING:
+                applyFirestarterRing(chr, skillId);
                 break;
             case RING_OF_TORMENT:
                 applyRingOfTorment(tsm, skillId, slv);
@@ -253,6 +257,20 @@ public class ItemSkillHandler implements ICommonSkillHandler {
         putIfPositive(tsm, CharacterTemporaryStat.DamageReduce, skillId, tOpt, getPositiveSkillValue(si, slv, SkillStat.x));
         putIfPositive(tsm, CharacterTemporaryStat.IndieIgnoreMobpdpR, skillId, tOpt, getPositiveSkillValue(si, slv, SkillStat.indieIgnoreMobpdpR));
         putIfPositive(tsm, CharacterTemporaryStat.IndieCr, skillId, tOpt, getPositiveSkillValue(si, slv, SkillStat.indieCr, SkillStat.cr));
+    }
+
+    private void applyFirestarterRing(Char chr, int skillId) {
+        Field field = chr.getField();
+        if (!field.canUseFireStarterRing()) {
+            chr.chatMessage("You cannot use Fire Starter Ring in this map.");
+            return;
+        }
+        if (field.getBurningFieldLevel() >= field.getMaxBurningFieldLevel()) {
+            chr.chatMessage("This map is already at Burning Stage 10.");
+            return;
+        }
+        field.increaseBurningFieldLevelToMax();
+        chr.resetSkillCoolTime(skillId);
     }
 
     private void applyRingOfTorment(TemporaryStatManager tsm, int skillId, int slv) {

@@ -1818,6 +1818,29 @@ public class AdminCommands {
         }
     }
 
+    @Command(names = {"burningfield"}, requiredType = Tester)
+    public static class BurningField extends AdminCommand {
+        public static void execute(Char chr, String[] args) {
+            if (args.length < 2 || !Util.isNumber(args[1])) {
+                chr.chatMessage(Notice2, "Usage: !burningfield <level 1-10>");
+                return;
+            }
+            Field field = chr.getField();
+            if (!field.canBeBurningField()) {
+                chr.chatMessage(Notice2, "This map cannot become a Burning Field.");
+                return;
+            }
+            int level = Integer.parseInt(args[1]);
+            if (level < 1 || level > GameConstants.BURNING_FIELD_MAX_LEVEL) {
+                chr.chatMessage(Notice2, "Burning Field level must be between 1 and 10.");
+                return;
+            }
+            field.setBurningFieldLevel(level);
+            chr.chatMessage(Notice2, String.format("Burning Field set to stage %d (%d%% bonus EXP).",
+                    field.getBurningFieldLevel(), field.getBonusExpByBurningFieldLevel()));
+        }
+    }
+
     @Command(names = {"atom"}, requiredType = Admin)
     public static class Atom extends AdminCommand {
         public static void execute(Char chr, String[] args) {
