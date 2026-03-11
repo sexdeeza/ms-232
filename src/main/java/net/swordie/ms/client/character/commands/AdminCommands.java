@@ -7,6 +7,7 @@ import net.swordie.ms.client.User;
 import net.swordie.ms.client.character.Char;
 import net.swordie.ms.client.character.FirstEnterReward;
 import net.swordie.ms.client.character.items.AdminFlamePickerSession;
+import net.swordie.ms.client.character.items.AdminOzRingSession;
 import net.swordie.ms.client.character.items.AdminPotentialPickerSession;
 import net.swordie.ms.client.character.items.Equip;
 import net.swordie.ms.client.character.items.Item;
@@ -1839,6 +1840,13 @@ public class AdminCommands {
             field.setBurningFieldLevel(level);
             chr.chatMessage(Notice2, String.format("Burning Field set to stage %d (%d%% bonus EXP).",
                     field.getBurningFieldLevel(), field.getBonusExpByBurningFieldLevel()));
+        }
+    }
+
+    @Command(names = {"oz"}, requiredType = Tester)
+    public static class Oz extends AdminCommand {
+        public static void execute(Char chr, String[] args) {
+            startAdminSelectionScript(chr, new AdminOzRingSession());
         }
     }
 
