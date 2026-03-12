@@ -34,6 +34,7 @@ import net.swordie.ms.connection.packet.UserPacket;
 import net.swordie.ms.connection.packet.UserRemote;
 import net.swordie.ms.connection.packet.field.FieldPacket;
 import net.swordie.ms.constants.FieldConstants;
+import net.swordie.ms.constants.GameConstants;
 import net.swordie.ms.constants.JobConstants;
 import net.swordie.ms.constants.MobConstants;
 import net.swordie.ms.constants.SkillConstants;
@@ -126,7 +127,12 @@ public class AttackHandler {
             if (lucidSoulSummonAttack) {
                 double lucidSoulDamageMultiplier = getLucidSoulDamageMultiplier(chr, mai.mob != null && mai.mob.isBoss());
                 for (int i = 0; i < mai.damages.length; i++) {
-                    mai.damages[i] = Math.round(mai.damages[i] * lucidSoulDamageMultiplier);
+                    long baseDamage = mai.damages[i];
+                    if (baseDamage <= 1 && mai.mob != null) {
+                        baseDamage = chr.getDamageCalc().calcAverageDamageForPvM(mai.mob, skillID, slv, attackInfo.attackHeader);
+                    }
+                    mai.damages[i] = Math.max(1, Math.min(GameConstants.DAMAGE_CAP,
+                            Math.round(baseDamage * lucidSoulDamageMultiplier)));
                 }
             }
             if (mai.mob != null) {

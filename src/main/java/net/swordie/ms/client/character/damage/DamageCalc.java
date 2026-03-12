@@ -8,6 +8,7 @@ import net.swordie.ms.client.character.skills.info.AttackInfo;
 import net.swordie.ms.client.character.skills.info.MobAttackInfo;
 import net.swordie.ms.client.character.skills.info.SkillInfo;
 import net.swordie.ms.client.character.skills.temp.TemporaryStatManager;
+import net.swordie.ms.handlers.header.OutHeader;
 import net.swordie.ms.constants.GameConstants;
 import net.swordie.ms.constants.ItemConstants;
 import net.swordie.ms.constants.JobConstants;
@@ -72,6 +73,62 @@ public class DamageCalc {
         var levelDiffMult = getLevelDiffMultiplier(chr.getLevel(), mob.getLevel());
 
         return (long) (damage * levelDiffMult * mult);
+    }
+
+    public long calcAverageDamageForPvM(Mob mob, int skillID, int slv, OutHeader attackHeader) {
+        if (mob == null) {
+            return 1;
+        }
+        double expectedDamage = (getMinBaseDamage() + getMaxBaseDamage()) / 2D;
+        int ied = chr.getTotalStat(BaseStat.ied);
+        int fd = chr.getTotalStat(BaseStat.fd);
+        int dam = chr.getTotalStat(damR);
+        int critRate = chr.getTotalStat(cr);
+
+        double monsterPDRate = mob.getForcedMobStat().getPdr();
+        monsterPDRate -= monsterPDRate * (ied / 100D);
+        expectedDamage *= Math.max(0.0, 100D - monsterPDRate) / 100D;
+
+        SkillInfo si = SkillData.getSkillInfoById(skillID);
+        if (si != null) {
+            int actualSlv = slv > 0 ? slv : chr.getSkillLevel(skillID);
+            expectedDamage *= si.getValue(SkillConstants.getDamageSkillStat(skillID, attackHeader), actualSlv) / 100D;
+            critRate += si.getValue(SkillStat.cr, actualSlv);
+            if (mob.isBoss()) {
+                dam += si.getValue(SkillStat.damageToBoss, actualSlv);
+            }
+        }
+
+        dam += mob.isBoss() ? chr.getTotalStat(bd) : chr.getTotalStat(nbd);
+        expectedDamage += expectedDamage * (dam / 100D);
+        expectedDamage += expectedDamage * (fd / 100D);
+
+        if (mob.isBoss()) {
+            critRate += chr.getTotalStat(addCrOnBoss);
+        }
+        if (critRate > 0) {
+            expectedDamage += expectedDamage * ((getMinCritDamage() + getMaxCritDamage()) / 200D);
+        }
+
+        expectedDamage *= 1 + GameConstants.getDamageBonusFromLevelDifference(chr.getLevel(), mob.getLevel());
+
+        int reqChuc = chr.getField().getInfo().getBarrier();
+        if (reqChuc > 0) {
+            int userChuc = chr.getTotalChuc();
+            int perc = userChuc / reqChuc;
+            int diff = userChuc - reqChuc;
+            expectedDamage += expectedDamage * (GameConstants.getStarForceMultiplier(perc, diff) / 100D);
+        }
+
+        int reqArc = chr.getField().getInfo().getBarrierArc();
+        if (reqArc > 0) {
+            int userArc = chr.getTotalStat(BaseStat.arc);
+            int perc = userArc / reqArc;
+            expectedDamage += expectedDamage * (GameConstants.getArcaneForceMultiplier(perc) / 100D);
+        }
+
+        expectedDamage = Math.min(GameConstants.DAMAGE_CAP, expectedDamage);
+        return Math.max(1, Math.round(expectedDamage));
     }
 
     private double getLevelDiffMultiplier(int charLevel, int mobLevel) {

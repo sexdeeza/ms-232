@@ -27,7 +27,8 @@ public class GameConstants {
     public static final short DAMAGE_SKIN_MAX_SIZE = 100;
     public static final int MAX_PET_AMOUNT = 3;
     public static final int MAX_HP_MP = 500000;
-    public static final long DAMAGE_CAP = 150_000_000_000L;
+    // The client still visually caps regular hits around 150b, but the server can safely track more than that.
+    public static final long DAMAGE_CAP = 10_000_000_000_000L;
     public static final int BEGINNER_SP_MAX_LV = 7;
     public static final int RESISTANCE_SP_MAX_LV = 10;
     public static final int QUICKSLOT_LENGTH = 32;
