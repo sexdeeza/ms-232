@@ -23,7 +23,7 @@ public class GameConstants {
     public static final int MOB_NX_RATE = 1;
     public static final int MOB_DROP_RATE = 1;
     public static final int MOB_MESO_RATE = 1;
-    public static final long MAX_MONEY = 99_999_999_999L;
+    public static final long MAX_MONEY = 999_999_999_999L;
     public static final short DAMAGE_SKIN_MAX_SIZE = 100;
     public static final int MAX_PET_AMOUNT = 3;
     public static final int MAX_HP_MP = 500000;
