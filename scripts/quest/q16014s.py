@@ -78,39 +78,41 @@ else:
 						   + str(sm.getUnionAssignedCharacterCount()) + " / " + str(sm.getUnionAssignedMaxCharacterCount())
 						   + ">#n#k")
 		elif nSel == 1:
-			text = "Are you here to advance your Legion #eto the next rank#n?\r\n\r\n#eCurrent Tier & Rank: #n#b#e<" + sm.getUnionRankName() + ">#n#k\r\n#eNext Tier & Rank: #n#b#e<" + str(sm.getUnionNextRankName()) + ">#n#k\r\n#eMax Legion Members after Rank-up:#n #b#e<" + str(sm.getUnionAssignedMaxCharacterCount()) + " to " + str(sm.getUnionAssignedNextMaxCharacterCount()) + ">#n#k\r\n\r\nYou must meet the following requirements to rank up:\r\n\r\n#e<Legion Rank> "
-			if sm.getUnionLevelReq() > sm.getUnionLevel():
-				text += "#r"
+			if sm.getUnionRank() >= 405:
+				sm.sendSayOkay("You've reached the highest rank already!")
 			else:
-				text += "#b"
-			text +=str(sm.getUnionLevelReq()) + "#n#k #n \r\n#e<Coins Needed> #b"
-			if sm.getUnionCoinReq() > sm.getUnionCoin():
-				text += "#r"
-			else:
-				text += "#b"
-			text += "#e#t4310229# x" + str(sm.getUnionCoinReq()) + "#n#k\r\n\r\n Do you want to #eadvance#n your Legion to the next rank?"
-			if sm.sendAskYesNo(text):
-				if sm.getUnionRank() >= 405:
-					sm.sendSayOkay("You've reached the highest rank already!")
-				elif sm.getUnionCoin() < sm.getUnionCoinReq():
-					sm.sendSayOkay("You need more #rLegion Coins#k to rank up. \r\n\r\n#eLegion Coins: #n#r" +
+				text = "Are you here to advance your Legion #eto the next rank#n?\r\n\r\n#eCurrent Tier & Rank: #n#b#e<" + sm.getUnionRankName() + ">#n#k\r\n#eNext Tier & Rank: #n#b#e<" + str(sm.getUnionNextRankName()) + ">#n#k\r\n#eMax Legion Members after Rank-up:#n #b#e<" + str(sm.getUnionAssignedMaxCharacterCount()) + " to " + str(sm.getUnionAssignedNextMaxCharacterCount()) + ">#n#k\r\n\r\nYou must meet the following requirements to rank up:\r\n\r\n#e<Legion Rank> "
+				if sm.getUnionLevelReq() > sm.getUnionLevel():
+					text += "#r"
+				else:
+					text += "#b"
+				text +=str(sm.getUnionLevelReq()) + "#n#k #n \r\n#e<Coins Needed> #b"
+				if sm.getUnionCoinReq() > sm.getUnionCoin():
+					text += "#r"
+				else:
+					text += "#b"
+				text += "#e#t4310229# x" + str(sm.getUnionCoinReq()) + "#n#k\r\n\r\n Do you want to #eadvance#n your Legion to the next rank?"
+				if sm.sendAskYesNo(text):
+					if sm.getUnionCoin() < sm.getUnionCoinReq():
+						sm.sendSayOkay("You need more #rLegion Coins#k to rank up. \r\n\r\n#eLegion Coins: #n#r" +
 								   str(sm.getUnionCoin()) + "#k\r\n#eRequired Coins: #n#b"
 								   + str(sm.getUnionCoinReq()) + "#k")
-				elif sm.getUnionLevel() < sm.getUnionLevelReq():
-					sm.sendSayOkay("Your #rCumulative Level#k must be higher to rank up.\r\n\r\n#eCumulative Level: #n#r"
-								   + str(sm.getUnionLevel()) + "#k\r\n#eRequired Level: #n#b" + str(sm.getUnionLevelReq()) + "#k")
-				else:
-					if sm.getUnionCoin() >= sm.getUnionCoinReq():
-						sm.addUnionCoin(-sm.getUnionCoinReq(), False)
-						sm.incrementUnionRank()
-						sm.sendSayOkay("(Claps enthusiastically)\r\n#eYour Legion has ranked up#n! We've approved you for "
-									   "additional member slots.\r\n\r\n#eNew Rank:#n #b#e<" + sm.getUnionNextRankName()
-									   + ">#n#k\r\n#eMax Legion Members:#n #b#e" + str(sm.getUnionAssignedMaxCharacterCount())
-									   + "#n#k\r\n\r\nKeep up the hard work!")
 					else:
-						sm.sendSayOkay("An error occured, please try again.")
-			else:
-				sm.sendSayOkay("Come back and talk to me when you want to take your legion to the next rank.")
+						if sm.getUnionLevel() < sm.getUnionLevelReq():
+							sm.sendSayOkay("Your #rCumulative Level#k must be higher to rank up.\r\n\r\n#eCumulative Level: #n#r"
+									   + str(sm.getUnionLevel()) + "#k\r\n#eRequired Level: #n#b" + str(sm.getUnionLevelReq()) + "#k")
+						else:
+							if sm.getUnionCoin() >= sm.getUnionCoinReq():
+								sm.addUnionCoin(-sm.getUnionCoinReq(), False)
+								sm.incrementUnionRank()
+								sm.sendSayOkay("(Claps enthusiastically)\r\n#eYour Legion has ranked up#n! We've approved you for "
+										   "additional member slots.\r\n\r\n#eNew Rank:#n #b#e<" + sm.getUnionNextRankName()
+										   + ">#n#k\r\n#eMax Legion Members:#n #b#e" + str(sm.getUnionAssignedMaxCharacterCount())
+										   + "#n#k\r\n\r\nKeep up the hard work!")
+							else:
+								sm.sendSayOkay("An error occured, please try again.")
+				else:
+					sm.sendSayOkay("Come back and talk to me when you want to take your legion to the next rank.")
 
 		elif nSel == 2:
 			nSel = sm.sendSay("Did you have questions about the #bLegion System#k?\r\nWhat do you want to know?\r\n#L0# "
@@ -218,5 +220,4 @@ else:
 				if sm.hasItem(4310229, amount):
 					sm.consumeItem(4310229, amount)
 					sm.addUnionCoin(amount, False)
-
 

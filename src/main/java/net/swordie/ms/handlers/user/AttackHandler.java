@@ -37,6 +37,7 @@ import net.swordie.ms.constants.FieldConstants;
 import net.swordie.ms.constants.JobConstants;
 import net.swordie.ms.constants.MobConstants;
 import net.swordie.ms.constants.SkillConstants;
+import net.swordie.ms.enums.BaseStat;
 import net.swordie.ms.enums.ChatType;
 import net.swordie.ms.enums.FieldOption;
 import net.swordie.ms.handlers.Handler;
@@ -58,6 +59,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static net.swordie.ms.enums.ChatType.Mob;
@@ -65,12 +67,34 @@ import static net.swordie.ms.enums.ChatType.Mob;
 public class AttackHandler {
 
     private static final Logger log = LogManager.getLogger(AttackHandler.class);
-    private static final int LUCID_SOUL_DAMAGE_MULTIPLIER = 20;
+    private static final double LUCID_SOUL_BASE_MULTIPLIER = 2.0;
+    private static final double LUCID_SOUL_MAX_MULTIPLIER = 30.0;
 
     private static boolean isLucidSoulSummonAttack(AttackInfo attackInfo) {
         return attackInfo.attackHeader == OutHeader.SUMMONED_ATTACK
                 && (attackInfo.skillId == SoulSkillHandler.NIGHTMARE_INVITE
                 || attackInfo.skillId == SoulSkillHandler.MASTER_OF_NIGHTMARES);
+    }
+
+    private static double getLucidSoulDamageMultiplier(Char chr, boolean bossTarget) {
+        Map<BaseStat, Integer> totalBasicStats = chr.getTotalBasicStats();
+        int attPercent = totalBasicStats.getOrDefault(BaseStat.padR, 0);
+        int bossDamagePercent = bossTarget ? totalBasicStats.getOrDefault(BaseStat.bd, 0) : 0;
+        int damagePercent = totalBasicStats.getOrDefault(BaseStat.damR, 0);
+        int mainStatPercent = Math.max(
+                Math.max(totalBasicStats.getOrDefault(BaseStat.strR, 0), totalBasicStats.getOrDefault(BaseStat.dexR, 0)),
+                Math.max(
+                        Math.max(totalBasicStats.getOrDefault(BaseStat.intR, 0), totalBasicStats.getOrDefault(BaseStat.lukR, 0)),
+                        totalBasicStats.getOrDefault(BaseStat.mhpR, 0)
+                )
+        );
+
+        double multiplier = LUCID_SOUL_BASE_MULTIPLIER
+                + attPercent / 150.0
+                + bossDamagePercent / 250.0
+                + damagePercent / 300.0
+                + mainStatPercent / 500.0;
+        return Math.min(multiplier, LUCID_SOUL_MAX_MULTIPLIER);
     }
 
 
@@ -96,13 +120,15 @@ public class AttackHandler {
         }
 
         // Fill in TotalDamageDealt in AttackInfo & Mob info
+        boolean lucidSoulSummonAttack = isLucidSoulSummonAttack(attackInfo);
         for (var mai : attackInfo.mobAttackInfo) {
-            if (isLucidSoulSummonAttack(attackInfo)) {
+            mai.mob = field.getLifeByObjectID(Mob.class, mai.mobId); // Find mob
+            if (lucidSoulSummonAttack) {
+                double lucidSoulDamageMultiplier = getLucidSoulDamageMultiplier(chr, mai.mob != null && mai.mob.isBoss());
                 for (int i = 0; i < mai.damages.length; i++) {
-                    mai.damages[i] *= LUCID_SOUL_DAMAGE_MULTIPLIER;
+                    mai.damages[i] = Math.round(mai.damages[i] * lucidSoulDamageMultiplier);
                 }
             }
-            mai.mob = field.getLifeByObjectID(Mob.class, mai.mobId); // Find mob
             if (mai.mob != null) {
                 mai.totalDamage = Arrays.stream(mai.damages).sum(); // total damage per mob
                 mai.mobDies = mai.mob.getHp() <= mai.totalDamage; // check if mob would die

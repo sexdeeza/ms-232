@@ -2830,6 +2830,10 @@ public class ScriptManagerImpl implements ScriptManager {
         return getUnionRank() == 405;
     }
 
+    private int getUnionRequirementIndex() {
+        return Math.min(getUnionRankIndex(), UnionMember.reqLev.length - 1);
+    }
+
     public String getUnionRankName() {
         return UnionMember.ranks[getUnionRankIndex()];
     }
@@ -2839,11 +2843,11 @@ public class ScriptManagerImpl implements ScriptManager {
     }
 
     public int getUnionCoinReq() {
-        return UnionMember.reqCoin[getUnionRankIndex()];
+        return UnionMember.reqCoin[getUnionRequirementIndex()];
     }
 
     public int getUnionLevelReq() {
-        return UnionMember.reqLev[getUnionRankIndex()];
+        return UnionMember.reqLev[getUnionRequirementIndex()];
     }
 
     public int getUnionLevel() {
