@@ -1272,6 +1272,36 @@ public class GameConstants {
         }
     }
 
+    private static int getRegularEquipStatBonusByReqLevel(int reqLevel) {
+        return reqLevel <= 137 ? 7 : reqLevel <= 149 ? 9 : reqLevel <= 159 ? 11 : reqLevel <= 199 ? 13 : 15;
+    }
+
+    private static int getRegularEquipAttBonusByReqLevel(int reqLevel, short chuc) {
+        if (chuc == 15) {
+            return reqLevel <= 137 ? 6 : reqLevel <= 149 ? 7 : reqLevel <= 159 ? 8 : reqLevel <= 199 ? 9 : 12;
+        } else if (chuc == 16) {
+            return reqLevel <= 137 ? 7 : reqLevel <= 149 ? 8 : reqLevel <= 159 ? 9 : reqLevel <= 199 ? 9 : 13;
+        } else if (chuc == 17) {
+            return reqLevel <= 137 ? 7 : reqLevel <= 149 ? 8 : reqLevel <= 159 ? 9 : reqLevel <= 199 ? 10 : 14;
+        } else if (chuc == 18) {
+            return reqLevel <= 137 ? 8 : reqLevel <= 149 ? 9 : reqLevel <= 159 ? 10 : reqLevel <= 199 ? 11 : 14;
+        } else if (chuc == 19) {
+            return reqLevel <= 137 ? 9 : reqLevel <= 149 ? 10 : reqLevel <= 159 ? 11 : reqLevel <= 199 ? 12 : 15;
+        } else if (chuc == 20) {
+            return reqLevel <= 149 ? 11 : reqLevel <= 159 ? 12 : reqLevel <= 199 ? 13 : 16;
+        } else if (chuc == 21) {
+            return reqLevel <= 149 ? 12 : reqLevel <= 159 ? 13 : reqLevel <= 199 ? 14 : 17;
+        }
+        return 0;
+    }
+
+    private static short normalizeExtendedStarBonusRange(short chuc) {
+        if (chuc <= 29) {
+            return chuc;
+        }
+        return (short) (21 + ((chuc - 30) % 9));
+    }
+
     // ugliest function in swordie
     public static int getEquipStatBoost(Equip equip, EnchantStat es, short chuc) {
         int stat = 0;
@@ -1280,38 +1310,24 @@ public class GameConstants {
             stat += chuc <= 2 ? 5 : chuc <= 4 ? 10 : chuc <= 6 ? 15 : chuc <= 8 ? 20 : chuc <= 14 ? 25 : 0;
         }
         int reqLevel = equip.getReqLevel() + equip.getiIncReq();
+        short normalizedExtendedChuc = normalizeExtendedStarBonusRange(chuc);
         // all stat
         if (es == EnchantStat.STR || es == EnchantStat.DEX || es == EnchantStat.INT || es == EnchantStat.LUK) {
             if (chuc <= 4) {
                 stat += 2;
             } else if (chuc <= 14) {
                 stat += 3;
-            } else if (chuc <= 21) {
-                stat += reqLevel <= 137 ? 7 : reqLevel <= 149 ? 9 : reqLevel <= 159 ? 11 : reqLevel <= 199 ? 13 : 15;
+            } else if (chuc <= 99) {
+                stat += getRegularEquipStatBonusByReqLevel(reqLevel);
             }
         }
         // att for all equips
         if ((es == EnchantStat.PAD || es == EnchantStat.MAD) && chuc >= 15) {
-            if (chuc == 15) {
-                stat += reqLevel <= 137 ? 6 : reqLevel <= 149 ? 7 : reqLevel <= 159 ? 8 : reqLevel <= 199 ? 9 : 12;
-            } else if (chuc == 16) {
-                stat += reqLevel <= 137 ? 7 : reqLevel <= 149 ? 8 : reqLevel <= 159 ? 9 : reqLevel <= 199 ? 9 : 13;
-            } else if (chuc == 17) {
-                stat += reqLevel <= 137 ? 7 : reqLevel <= 149 ? 8 : reqLevel <= 159 ? 9 : reqLevel <= 199 ? 10 : 14;
-            } else if (chuc == 18) {
-                stat += reqLevel <= 137 ? 8 : reqLevel <= 149 ? 9 : reqLevel <= 159 ? 10 : reqLevel <= 199 ? 11 : 14;
-            } else if (chuc == 19) {
-                stat += reqLevel <= 137 ? 9 : reqLevel <= 149 ? 10 : reqLevel <= 159 ? 11 : reqLevel <= 199 ? 12 : 15;
-            } else if (chuc == 20) {
-                stat += reqLevel <= 149 ? 11 : reqLevel <= 159 ? 12 : reqLevel <= 199 ? 13 : 16;
-            } else if (chuc == 21) {
-                stat += reqLevel <= 149 ? 12 : reqLevel <= 159 ? 13 : reqLevel <= 199 ? 14 : 17;
-            } else if (chuc == 22) {
-                stat += reqLevel <= 149 ? 17 : reqLevel <= 159 ? 18 : reqLevel <= 199 ? 19 : 21;
-            } else if (chuc == 23) {
-                stat += reqLevel <= 149 ? 19 : reqLevel <= 159 ? 20 : reqLevel <= 199 ? 21 : 23;
-            } else if (chuc == 24) {
-                stat += reqLevel <= 149 ? 21 : reqLevel <= 159 ? 22 : reqLevel <= 199 ? 23 : 25;
+            if (chuc <= 21) {
+                stat += getRegularEquipAttBonusByReqLevel(reqLevel, chuc);
+            } else if (chuc <= 99) {
+                int base = reqLevel <= 149 ? 17 : reqLevel <= 159 ? 18 : reqLevel <= 199 ? 19 : 21;
+                stat += base + 2 * (normalizedExtendedChuc - 22);
             }
         }
         // att gains for weapons
@@ -1322,11 +1338,11 @@ public class GameConstants {
                 } else if (es == EnchantStat.MAD) {
                     stat += equip.getiMad() * 0.02;
                 }
-            } else if (es == EnchantStat.PAD || es == EnchantStat.MAD) {
-                stat += chuc == 22 ? 13 : chuc == 23 ? 12 : chuc == 24 ? 11 : 0;
-                if (reqLevel == 200 && chuc == 15) {
-                    stat += 1;
-                }
+            } else if ((es == EnchantStat.PAD || es == EnchantStat.MAD) && chuc >= 22 && chuc <= 99) {
+                stat += Math.max(0, 13 - (normalizedExtendedChuc - 22));
+            }
+            if ((es == EnchantStat.PAD || es == EnchantStat.MAD) && reqLevel == 200 && chuc == 15) {
+                stat += 1;
             }
         }
         // att gain for gloves, enhancements 4/6/8/10 and 12-14
