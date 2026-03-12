@@ -42,6 +42,7 @@ import net.swordie.ms.connection.packet.model.MessagePacket;
 import net.swordie.ms.constants.*;
 import net.swordie.ms.constants.JobConstants.JobEnum;
 import net.swordie.ms.enums.*;
+import net.swordie.ms.handlers.executors.EventManager;
 import net.swordie.ms.handlers.header.OutHeader;
 import net.swordie.ms.life.AffectedArea;
 import net.swordie.ms.life.android.Android;
@@ -85,6 +86,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -999,8 +1001,18 @@ public class AdminCommands {
             double mpratio = (((double) mp) / mmp) * 100;
             DecimalFormat formatNumbers = new DecimalFormat("##.00");
             NumberFormat addDeci = NumberFormat.getNumberInstance(Locale.US);
+            Map<BaseStat, Integer> tbs = chr.getTotalBasicStats();
             chr.chatMessage(Notice2, "STR: " + addDeci.format(strength) + "  DEX: " + addDeci.format(dexterity) + "  INT: " + addDeci.format(intellect) + "  LUK: " + addDeci.format(luck));
             chr.chatMessage(Notice2, "HP: " + addDeci.format(hp) + " / " + addDeci.format(mhp) + " (" + formatNumbers.format(hpratio) + "%)   MP: " + addDeci.format(mp) + " / " + addDeci.format(mmp) + " (" + formatNumbers.format(mpratio) + "%)");
+            chr.chatMessage(Notice2, String.format("Buff Duration: +%d%%  Summon Duration: +%d%%",
+                    tbs.get(BaseStat.buffTimeR) - 100,
+                    tbs.get(BaseStat.summonTimeR) - 100));
+            chr.chatMessage(Notice2, String.format("ATT%%: %d  STR%%: %d  DEX%%: %d  LUK%%: %d  INT%%: %d",
+                    tbs.get(BaseStat.padR),
+                    tbs.get(BaseStat.strR),
+                    tbs.get(BaseStat.dexR),
+                    tbs.get(BaseStat.lukR),
+                    tbs.get(BaseStat.intR)));
         }
     }
 
@@ -4232,6 +4244,117 @@ public class AdminCommands {
         }
     }
 
+    @Command(names = {"buff"}, requiredType = Admin)
+    public static class Buff extends AdminCommand {
+        private static final int ADMIN_BUFF_SKILL_ID = 80002602;
+
+        public static void execute(Char chr, String[] args) {
+            if (args.length < 3) {
+                chr.chatMessage("Usage: !buff <att|ied|boss|dmg|critrate|critdmg|drop|meso|buff|summon|str|dex|luk|int> <amount> [minutes]");
+                return;
+            }
+
+            String buffName = args[1].toLowerCase(Locale.US);
+            if (!Util.isNumber(args[2])) {
+                chr.chatMessage("Amount must be a number.");
+                return;
+            }
+            int buffAmount = Integer.parseInt(args[2]);
+            int durationMinutes = 60;
+            if (args.length >= 4) {
+                if (!Util.isNumber(args[3])) {
+                    chr.chatMessage("Minutes must be a number.");
+                    return;
+                }
+                durationMinutes = Integer.parseInt(args[3]);
+                if (durationMinutes <= 0) {
+                    chr.chatMessage("Minutes must be greater than 0.");
+                    return;
+                }
+            }
+
+            CharacterTemporaryStat[] ctsBuffs = null;
+            BaseStat[] baseStatBuffs = null;
+            switch (buffName) {
+                case "att":
+                    ctsBuffs = new CharacterTemporaryStat[]{IndiePADR, IndieMADR};
+                    break;
+                case "ied":
+                    ctsBuffs = new CharacterTemporaryStat[]{IndieIgnoreMobpdpR};
+                    break;
+                case "boss":
+                    ctsBuffs = new CharacterTemporaryStat[]{IndieBDR};
+                    break;
+                case "dmg":
+                    ctsBuffs = new CharacterTemporaryStat[]{IndieDamR};
+                    break;
+                case "critrate":
+                    ctsBuffs = new CharacterTemporaryStat[]{IndieCr};
+                    break;
+                case "critdmg":
+                    ctsBuffs = new CharacterTemporaryStat[]{IndieCrDmg};
+                    break;
+                case "drop":
+                    ctsBuffs = new CharacterTemporaryStat[]{DropRIncrease};
+                    break;
+                case "meso":
+                    ctsBuffs = new CharacterTemporaryStat[]{MesoUp};
+                    break;
+                case "buff":
+                    ctsBuffs = new CharacterTemporaryStat[]{IndieScriptBuff};
+                    break;
+                case "summon":
+                    baseStatBuffs = new BaseStat[]{BaseStat.summonTimeR};
+                    break;
+                case "str":
+                    baseStatBuffs = new BaseStat[]{BaseStat.strR};
+                    break;
+                case "dex":
+                    baseStatBuffs = new BaseStat[]{BaseStat.dexR};
+                    break;
+                case "luk":
+                    baseStatBuffs = new BaseStat[]{BaseStat.lukR};
+                    break;
+                case "int":
+                    baseStatBuffs = new BaseStat[]{BaseStat.intR};
+                    break;
+                default:
+                    chr.chatMessage(String.format("Unknown buff '%s'.", buffName));
+                    return;
+            }
+
+            TemporaryStatManager tsm = chr.getTemporaryStatManager();
+            if (ctsBuffs != null) {
+                Option o = new Option();
+                o.nOption = buffAmount;
+                o.rOption = ADMIN_BUFF_SKILL_ID;
+                o.tOption = durationMinutes * 60;
+                for (CharacterTemporaryStat cts : ctsBuffs) {
+                    tsm.putCharacterStatValue(cts, o, true);
+                }
+                tsm.sendSetStatPacket();
+            }
+
+            if (baseStatBuffs != null) {
+                final BaseStat[] finalBaseStatBuffs = baseStatBuffs;
+                final int finalBuffAmount = buffAmount;
+                for (BaseStat baseStat : baseStatBuffs) {
+                    tsm.addBaseStat(baseStat, buffAmount);
+                }
+                EventManager.addEvent(() -> {
+                    for (BaseStat baseStat : finalBaseStatBuffs) {
+                        chr.getTemporaryStatManager().removeBaseStat(baseStat, finalBuffAmount);
+                    }
+                }, durationMinutes, TimeUnit.MINUTES);
+            }
+
+            String path = "Effect/Direction23.img/effect2/5";
+            chr.write(UserPacket.effect(Effect.avatarOriented(path)));
+            chr.getField().broadcastPacket(UserRemote.effect(chr.getId(), Effect.avatarOriented(path)), chr);
+            chr.chatMessage(String.format("Applied %+d%% %s buff for %d minute(s).", buffAmount, buffName, durationMinutes));
+        }
+    }
+
     @Command(names = {"vp", "votepoints", "vote"}, requiredType = Tester)
     public static class VotePoints extends AdminCommand {
         public static void execute(Char chr, String[] args) {
@@ -4241,6 +4364,20 @@ public class AdminCommands {
 
             int vp = Integer.parseInt(args[1]);
             chr.getUser().addVotePoints(vp);
+        }
+    }
+
+    @Command(names = {"legioncoins"}, requiredType = Tester)
+    public static class LegionCoins extends AdminCommand {
+        public static void execute(Char chr, String[] args) {
+            if (args.length < 2) {
+                chr.chatMessage("Usage: !legioncoins <amount>");
+                return;
+            }
+
+            int amount = Integer.parseInt(args[1]);
+            chr.getAccount().getUnion().addUnionCoin(amount);
+            chr.chatMessage(String.format("Legion coins: %d", chr.getAccount().getUnion().getUnionCoin()));
         }
     }
 

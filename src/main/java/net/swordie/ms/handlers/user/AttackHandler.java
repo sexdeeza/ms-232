@@ -26,6 +26,7 @@ import net.swordie.ms.client.jobs.nova.Kaiser;
 import net.swordie.ms.client.jobs.resistance.BattleMage;
 import net.swordie.ms.client.jobs.resistance.WildHunter;
 import net.swordie.ms.client.jobs.sengoku.Kanna;
+import net.swordie.ms.client.jobs.common.SoulSkillHandler;
 import net.swordie.ms.connection.InPacket;
 import net.swordie.ms.connection.packet.Effect;
 import net.swordie.ms.connection.packet.Summoned;
@@ -64,6 +65,13 @@ import static net.swordie.ms.enums.ChatType.Mob;
 public class AttackHandler {
 
     private static final Logger log = LogManager.getLogger(AttackHandler.class);
+    private static final int LUCID_SOUL_DAMAGE_MULTIPLIER = 20;
+
+    private static boolean isLucidSoulSummonAttack(AttackInfo attackInfo) {
+        return attackInfo.attackHeader == OutHeader.SUMMONED_ATTACK
+                && (attackInfo.skillId == SoulSkillHandler.NIGHTMARE_INVITE
+                || attackInfo.skillId == SoulSkillHandler.MASTER_OF_NIGHTMARES);
+    }
 
 
     // No handler, gets called from other handlers
@@ -89,6 +97,11 @@ public class AttackHandler {
 
         // Fill in TotalDamageDealt in AttackInfo & Mob info
         for (var mai : attackInfo.mobAttackInfo) {
+            if (isLucidSoulSummonAttack(attackInfo)) {
+                for (int i = 0; i < mai.damages.length; i++) {
+                    mai.damages[i] *= LUCID_SOUL_DAMAGE_MULTIPLIER;
+                }
+            }
             mai.mob = field.getLifeByObjectID(Mob.class, mai.mobId); // Find mob
             if (mai.mob != null) {
                 mai.totalDamage = Arrays.stream(mai.damages).sum(); // total damage per mob
