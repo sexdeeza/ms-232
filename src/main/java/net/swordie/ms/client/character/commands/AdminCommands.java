@@ -6,6 +6,8 @@ import net.swordie.ms.client.Account;
 import net.swordie.ms.client.User;
 import net.swordie.ms.client.character.Char;
 import net.swordie.ms.client.character.FirstEnterReward;
+import net.swordie.ms.client.character.familiar.AdminFamiliarPotentialPickerSession;
+import net.swordie.ms.client.character.familiar.FamiliarCodexUpdateMask;
 import net.swordie.ms.client.character.items.AdminFlamePickerSession;
 import net.swordie.ms.client.character.items.AdminOzRingSession;
 import net.swordie.ms.client.character.items.AdminPotentialPickerSession;
@@ -1229,6 +1231,38 @@ public class AdminCommands {
                 return;
             }
             startAdminSelectionScript(chr, new AdminPotentialPickerSession(equip, (short) invPosition, true));
+        }
+    }
+
+    @Command(names = {"fampot"}, requiredType = Admin)
+    public static class FamiliarPotentialPicker extends AdminCommand {
+
+        public static void execute(Char chr, String[] args) {
+            startAdminSelectionScript(chr, new AdminFamiliarPotentialPickerSession(chr));
+        }
+    }
+
+    @Command(names = {"finishfamiliars"}, requiredType = Admin)
+    public static class FinishFamiliars extends AdminCommand {
+
+        public static void execute(Char chr, String[] args) {
+            var fcm = chr.getFamiliarCodexManager();
+            var collected = fcm.getCollectedFamiliars();
+            for (var badgeInfo : FamiliarData.getBadgeInfos()) {
+                collected.addAll(badgeInfo.getFamList());
+            }
+
+            var qm = chr.getQuestManager();
+            if (!qm.hasQuestInProgress(QuestConstants.FAMILIAR_SLOT1)) {
+                qm.addQuestWithQr(chr, QuestConstants.FAMILIAR_SLOT1, "famimax=1");
+            }
+            if (!qm.hasQuestCompleted(QuestConstants.FAMILIAR_SLOT2)) {
+                qm.completeQuest(QuestConstants.FAMILIAR_SLOT2);
+            }
+
+            fcm.updateForClient(FamiliarCodexUpdateMask.All.getVal());
+            chr.write(UserLocal.familiarBadgeAddResult(chr));
+            chr.chatMessage("Completed all familiar badges and unlocked all familiar summon slots.");
         }
     }
 

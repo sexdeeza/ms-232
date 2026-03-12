@@ -13,6 +13,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -244,6 +246,10 @@ public class FamiliarData {
         return badgeInfos.getOrDefault(badgeId, null);
     }
 
+    public static Collection<BadgeInfo> getBadgeInfos() {
+        return Collections.unmodifiableCollection(badgeInfos.values());
+    }
+
     public static void generateDatFiles() {
         log.info("Started generating Familiar data.");
         long start = System.currentTimeMillis();
@@ -267,5 +273,4 @@ public class FamiliarData {
         System.out.println();
     }
 }
-
 
