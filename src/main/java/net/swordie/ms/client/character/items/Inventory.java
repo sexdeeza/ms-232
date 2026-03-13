@@ -22,6 +22,16 @@ import java.util.stream.Collectors;
  */
 public class Inventory {
     private static final int BONUS_SUMMON_DURATION = 50;
+    private static final int AVENGER_QUIVER_BELT = 1132183;
+    private static final int GRIN_RING = 1112757;
+    private static final int HELLIA_NECKLACE = 1122210;
+    private static final int LEGEND_OF_THE_WHITE_FOX_RING = 1112982;
+    private static final int DOOM_SHOULDER = 1152101;
+    private static final int BONUS_CRIT_RATE = 100;
+    private static final int BONUS_BUFF_DURATION = 100;
+    private static final int BONUS_STATUS_RESISTANCE = 50;
+    private static final int BONUS_DEFENSE = 500;
+    private static final int WHITE_FOX_RING_SUMMON_DURATION = 100;
 
     private static final ItemDao itemDao = (ItemDao) SworDaoFactory.getByClass(Item.class);
 
@@ -329,16 +339,31 @@ public class Inventory {
             }
         }
 
-        applyCustomSummonDurationBonuses();
+        applyCustomEquipBonuses();
 
         applySets(setCount, jokerItems);
     }
 
-    private void applyCustomSummonDurationBonuses() {
+    private void applyCustomEquipBonuses() {
+        double critRateBonus = 0;
         double summonDurationBonus = 0;
+        double buffDurationBonus = 0;
+        double statusResistanceBonus = 0;
+        double defenseBonus = 0;
         for (var item : getItems()) {
             if (!(item instanceof Equip equip)) {
                 continue;
+            }
+            switch (equip.getItemId()) {
+                case AVENGER_QUIVER_BELT -> critRateBonus += BONUS_CRIT_RATE;
+                case GRIN_RING, LEGEND_OF_THE_WHITE_FOX_RING -> summonDurationBonus += WHITE_FOX_RING_SUMMON_DURATION;
+                case HELLIA_NECKLACE -> buffDurationBonus += BONUS_BUFF_DURATION;
+                case DOOM_SHOULDER -> {
+                    statusResistanceBonus += BONUS_STATUS_RESISTANCE;
+                    defenseBonus += BONUS_DEFENSE;
+                }
+                default -> {
+                }
             }
             String itemName = StringData.getItemStringById(equip.getItemId());
             if (itemName == null) {
@@ -347,15 +372,29 @@ public class Inventory {
             String normalizedName = itemName.toLowerCase(Locale.ENGLISH);
             if (normalizedName.contains("frenzy totem")) {
                 summonDurationBonus += BONUS_SUMMON_DURATION;
-            } else if (normalizedName.contains("battle-roid")
-                    || normalizedName.contains("battle roid")
-                    || normalizedName.contains("battleroid")) {
-                summonDurationBonus += BONUS_SUMMON_DURATION;
             }
+        }
+        if (critRateBonus > 0) {
+            getBaseStats().put(BaseStat.cr,
+                    getBaseStats().getOrDefault(BaseStat.cr, 0D) + critRateBonus);
         }
         if (summonDurationBonus > 0) {
             getBaseStats().put(BaseStat.summonTimeR,
                     getBaseStats().getOrDefault(BaseStat.summonTimeR, 0D) + summonDurationBonus);
+        }
+        if (buffDurationBonus > 0) {
+            getBaseStats().put(BaseStat.buffTimeR,
+                    getBaseStats().getOrDefault(BaseStat.buffTimeR, 0D) + buffDurationBonus);
+        }
+        if (statusResistanceBonus > 0) {
+            getBaseStats().put(BaseStat.asr,
+                    getBaseStats().getOrDefault(BaseStat.asr, 0D) + statusResistanceBonus);
+        }
+        if (defenseBonus > 0) {
+            getBaseStats().put(BaseStat.pdd,
+                    getBaseStats().getOrDefault(BaseStat.pdd, 0D) + defenseBonus);
+            getBaseStats().put(BaseStat.mdd,
+                    getBaseStats().getOrDefault(BaseStat.mdd, 0D) + defenseBonus);
         }
     }
 

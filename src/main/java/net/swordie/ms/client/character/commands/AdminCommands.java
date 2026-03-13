@@ -125,10 +125,11 @@ public class AdminCommands {
     private static final int[] GM_SHOP_ITEMS = {
             1202186, 1202236, 1202248, 1202249, 1202250, 1202251,
             1113073, 1113074, 1113075, 1113055, 1113155, 1113269, 1113313, 1113305, 1113306, 1114400, 1114401,
+            1112982, 1112757,
             2633926,
-            1122430, 1122267, 1122296, 1122150,
+            1122430, 1122267, 1122296, 1122150, 1122210,
             2633914,
-            1132246, 1132308,
+            1132246, 1132308, 1132183,
             2434586, 1004075, 2633915,
             1012632,
             1022278,
@@ -137,7 +138,7 @@ public class AdminCommands {
             2434585,
             2633913,
             1032223, 1032316,
-            1152155, 1152154,
+            1152155, 1152154, 1152101,
             2633927,
             1182273, 1182060,
             1142666, 1143008, 1142586, 1142573,
@@ -1463,6 +1464,10 @@ public class AdminCommands {
 
     @Command(names = {"search", "s"}, requiredType = Admin)
     public static class SearchItem extends AdminCommand {
+        private static final Set<String> SEARCH_CATEGORY_FLAGS = Set.of(
+                "-equip", "-equips", "-use", "-etc", "-setup", "-cash", "-dec"
+        );
+
         public static void execute(Char chr, String[] args) {
             if (args.length <= 1) {
                 chr.getScriptManager().startScript(0, "admin_item_search", ScriptType.Npc);
@@ -1470,9 +1475,15 @@ public class AdminCommands {
             }
             var includeTerms = new ArrayList<String>();
             var excludeTerms = new ArrayList<String>();
+            String itemCategory = "";
             for (int i = 1; i < args.length; i++) {
                 var term = args[i] == null ? "" : args[i].trim();
                 if (term.isEmpty()) {
+                    continue;
+                }
+                String lowerTerm = term.toLowerCase();
+                if (SEARCH_CATEGORY_FLAGS.contains(lowerTerm)) {
+                    itemCategory = lowerTerm.equals("-equips") ? "equip" : lowerTerm.substring(1);
                     continue;
                 }
                 if (term.startsWith("!") && term.length() > 1) {
@@ -1484,6 +1495,7 @@ public class AdminCommands {
             var customBindings = new HashMap<String, Object>();
             customBindings.put("initial_query", String.join(" ", includeTerms));
             customBindings.put("exclude_queries", excludeTerms);
+            customBindings.put("item_category", itemCategory);
             chr.getScriptManager().startScript(0, "admin_item_search", ScriptType.Npc, customBindings);
         }
     }

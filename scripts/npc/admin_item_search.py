@@ -1,6 +1,8 @@
 from net.swordie.ms.loaders import StringData
+from net.swordie.ms.constants import ItemConstants
 
 MAX_RESULTS = 100
+VALID_CATEGORIES = {"equip", "equips", "use", "etc", "setup", "cash", "dec"}
 
 
 def _safe_trim(text):
@@ -31,10 +33,33 @@ def _matches_filters(item_name, include_terms, exclude_terms):
     return True
 
 
+def _matches_category(item_id, category):
+    if category == "":
+        return True
+    if category == "equip":
+        return ItemConstants.isEquip(item_id) and not ItemConstants.isCash(item_id)
+    if category == "use":
+        return ItemConstants.isConsume(item_id)
+    if category == "etc":
+        return ItemConstants.isEtc(item_id)
+    if category == "setup":
+        return ItemConstants.isInstall(item_id)
+    if category == "cash":
+        return ItemConstants.isCash(item_id) and not ItemConstants.isEquip(item_id)
+    if category == "dec":
+        return ItemConstants.isEquip(item_id) and ItemConstants.isCash(item_id)
+    return True
+
+
 query = _safe_trim(initial_query if "initial_query" in globals() else "")
 exclude_terms = _to_lower_list(
     exclude_queries if "exclude_queries" in globals() else []
 )
+category = _safe_trim(item_category if "item_category" in globals() else "").lower()
+if category == "equips":
+    category = "equip"
+if category not in VALID_CATEGORIES:
+    category = ""
 
 if query == "" and len(exclude_terms) == 0:
     query = _safe_trim(sm.sendAskText("Search items by name:", "", 1, 40))
@@ -62,10 +87,14 @@ else:
                 iid = int(item_id)
             except Exception:
                 continue
+            if not _matches_category(iid, category):
+                continue
             results.append((iid, item_name))
 
         if len(results) == 0:
             display_query = query
+            if category != "":
+                display_query += " -" + category
             for ex in exclude_terms:
                 display_query += " !" + ex
             sm.sendSayOkay("No valid items were found for '#b" + display_query + "#k'.")
@@ -75,6 +104,8 @@ else:
                 results = results[:MAX_RESULTS]
 
             display_query = query
+            if category != "":
+                display_query += " -" + category
             for ex in exclude_terms:
                 display_query += " !" + ex
             msg = (
