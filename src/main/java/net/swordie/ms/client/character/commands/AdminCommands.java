@@ -1497,6 +1497,9 @@ public class AdminCommands {
         private static final Set<String> SEARCH_CATEGORY_FLAGS = Set.of(
                 "-equip", "-equips", "-use", "-etc", "-setup", "-cash", "-dec"
         );
+        private static final Set<String> SEARCH_TRADE_FLAGS = Set.of(
+                "-trade", "-untrade", "-transfer"
+        );
 
         public static void execute(Char chr, String[] args) {
             if (args.length <= 1) {
@@ -1506,6 +1509,7 @@ public class AdminCommands {
             var includeTerms = new ArrayList<String>();
             var excludeTerms = new ArrayList<String>();
             String itemCategory = "";
+            String tradeFilter = "";
             for (int i = 1; i < args.length; i++) {
                 var term = args[i] == null ? "" : args[i].trim();
                 if (term.isEmpty()) {
@@ -1514,6 +1518,10 @@ public class AdminCommands {
                 String lowerTerm = term.toLowerCase();
                 if (SEARCH_CATEGORY_FLAGS.contains(lowerTerm)) {
                     itemCategory = lowerTerm.equals("-equips") ? "equip" : lowerTerm.substring(1);
+                    continue;
+                }
+                if (SEARCH_TRADE_FLAGS.contains(lowerTerm)) {
+                    tradeFilter = lowerTerm.substring(1);
                     continue;
                 }
                 if (term.startsWith("!") && term.length() > 1) {
@@ -1526,6 +1534,7 @@ public class AdminCommands {
             customBindings.put("initial_query", String.join(" ", includeTerms));
             customBindings.put("exclude_queries", excludeTerms);
             customBindings.put("item_category", itemCategory);
+            customBindings.put("trade_filter", tradeFilter);
             chr.getScriptManager().startScript(0, "admin_item_search", ScriptType.Npc, customBindings);
         }
     }

@@ -1,8 +1,10 @@
 from net.swordie.ms.loaders import StringData
+from net.swordie.ms.loaders import ItemData
 from net.swordie.ms.constants import ItemConstants
 
 MAX_RESULTS = 100
 VALID_CATEGORIES = {"equip", "equips", "use", "etc", "setup", "cash", "dec"}
+VALID_TRADE_FILTERS = {"trade", "untrade", "transfer"}
 
 
 def _safe_trim(text):
@@ -51,15 +53,46 @@ def _matches_category(item_id, category):
     return True
 
 
+def _matches_trade_filter(item_id, trade_filter):
+    if trade_filter == "":
+        return True
+
+    item_info = ItemData.getItemInfoByID(item_id)
+    if trade_filter == "transfer":
+        return item_info is not None and item_info.isAccountSharable()
+    if trade_filter == "trade":
+        return item_info is not None and not item_info.isTradeBlock() and not item_info.isAccountSharable()
+    if trade_filter == "untrade":
+        if item_info is not None:
+            return item_info.isTradeBlock()
+        equip_info = ItemData.getEquipInfoById(item_id)
+        return equip_info is not None and equip_info.isTradeBlock()
+    return True
+
+
+def _build_display_query(query, category, trade_filter, exclude_terms):
+    display_query = query
+    if category != "":
+        display_query += " -" + category
+    if trade_filter != "":
+        display_query += " -" + trade_filter
+    for ex in exclude_terms:
+        display_query += " !" + ex
+    return display_query
+
+
 query = _safe_trim(initial_query if "initial_query" in globals() else "")
 exclude_terms = _to_lower_list(
     exclude_queries if "exclude_queries" in globals() else []
 )
 category = _safe_trim(item_category if "item_category" in globals() else "").lower()
+selected_trade_filter = _safe_trim(globals()["trade_filter"] if "trade_filter" in globals() else "").lower()
 if category == "equips":
     category = "equip"
 if category not in VALID_CATEGORIES:
     category = ""
+if selected_trade_filter not in VALID_TRADE_FILTERS:
+    selected_trade_filter = ""
 
 if query == "" and len(exclude_terms) == 0:
     query = _safe_trim(sm.sendAskText("Search items by name:", "", 1, 40))
@@ -89,25 +122,19 @@ else:
                 continue
             if not _matches_category(iid, category):
                 continue
+            if not _matches_trade_filter(iid, selected_trade_filter):
+                continue
             results.append((iid, item_name))
 
         if len(results) == 0:
-            display_query = query
-            if category != "":
-                display_query += " -" + category
-            for ex in exclude_terms:
-                display_query += " !" + ex
+            display_query = _build_display_query(query, category, selected_trade_filter, exclude_terms)
             sm.sendSayOkay("No valid items were found for '#b" + display_query + "#k'.")
         else:
             results = sorted(results, key=lambda it: (it[1].lower(), it[0]))
             if len(results) > MAX_RESULTS:
                 results = results[:MAX_RESULTS]
 
-            display_query = query
-            if category != "":
-                display_query += " -" + category
-            for ex in exclude_terms:
-                display_query += " !" + ex
+            display_query = _build_display_query(query, category, selected_trade_filter, exclude_terms)
             msg = (
                 "Search results for '#b"
                 + display_query

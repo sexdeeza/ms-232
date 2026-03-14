@@ -26,14 +26,22 @@ else:
             if not session.isValidStatIndex(stat_sel):
                 sm.sendSayOkay("Invalid stat selection.")
             else:
-                current_value = session.getStatValue(stat_sel)
-                max_value = session.getStatMaxValue(stat_sel)
-                value = sm.sendAskNumber(
-                    "Set {} to what value?".format(session.getStatDisplay(stat_sel)),
-                    current_value,
-                    0,
-                    max_value,
-                )
+                if stat_sel == 0:
+                    value = sm.sendAskNumber(
+                        "Add how much to every available stat on this equip?",
+                        0,
+                        0,
+                        session.getStatMaxValue(stat_sel),
+                    )
+                else:
+                    current_value = session.getStatValue(stat_sel)
+                    max_value = session.getStatMaxValue(stat_sel)
+                    value = sm.sendAskNumber(
+                        "Set {} to what value?".format(session.getStatDisplay(stat_sel)),
+                        current_value,
+                        0,
+                        max_value,
+                    )
                 sm.sendSayOkay(session.applyStat(chr, stat_sel, value))
     elif action == 1:
         value = sm.sendAskNumber(

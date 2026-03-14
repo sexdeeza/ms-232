@@ -70,9 +70,10 @@ public class AdminSetEquipSession {
         StringBuilder sb = new StringBuilder();
         sb.append("#e<Admin Equip Editor - Individual Stats>#n\r\n");
         sb.append("Select a stat to edit for #v").append(equip.getItemId()).append("##t").append(equip.getItemId()).append("#.\r\n\r\n");
+        sb.append("#L0#All Available Stats (add to each)#l\r\n");
         for (int i = 0; i < editableStats.size(); i++) {
             EditableStat editableStat = editableStats.get(i);
-            sb.append("#L").append(i).append("#")
+            sb.append("#L").append(i + 1).append("#")
                     .append(editableStat.display)
                     .append(" (current: ").append(getStatValue(i)).append(")")
                     .append("#l\r\n");
@@ -81,23 +82,43 @@ public class AdminSetEquipSession {
     }
 
     public boolean isValidStatIndex(int index) {
-        return index >= 0 && index < editableStats.size();
+        return index >= 0 && index <= editableStats.size();
     }
 
     public String getStatDisplay(int index) {
-        return editableStats.get(index).display;
+        if (index == 0) {
+            return "All Available Stats";
+        }
+        return editableStats.get(index - 1).display;
     }
 
     public int getStatValue(int index) {
-        return (int) equip.getBaseStat(editableStats.get(index).baseStat);
+        if (index == 0) {
+            return 0;
+        }
+        return (int) equip.getBaseStat(editableStats.get(index - 1).baseStat);
     }
 
     public int getStatMaxValue(int index) {
-        return editableStats.get(index).baseStat == EquipBaseStat.iReduceReq ? 255 : DEFAULT_STAT_MAX;
+        if (index == 0) {
+            return DEFAULT_STAT_MAX;
+        }
+        return editableStats.get(index - 1).baseStat == EquipBaseStat.iReduceReq ? 255 : DEFAULT_STAT_MAX;
     }
 
     public String applyStat(Char chr, int index, int value) {
-        EditableStat editableStat = editableStats.get(index);
+        if (index == 0) {
+            for (EditableStat editableStat : editableStats) {
+                equip.setBaseStat(editableStat.baseStat, equip.getBaseStat(editableStat.baseStat) + value);
+            }
+            applyAndSync(chr, otherEquip -> {
+                for (EditableStat editableStat : editableStats) {
+                    otherEquip.setBaseStat(editableStat.baseStat, otherEquip.getBaseStat(editableStat.baseStat) + value);
+                }
+            });
+            return String.format("Added %d to every available stat on #v%d##t%d#.", value, equip.getItemId(), equip.getItemId());
+        }
+        EditableStat editableStat = editableStats.get(index - 1);
         equip.setBaseStat(editableStat.baseStat, value);
         applyAndSync(chr, otherEquip -> otherEquip.setBaseStat(editableStat.baseStat, value));
         return String.format("Set %s to %d on #v%d##t%d#.", editableStat.display, value, equip.getItemId(), equip.getItemId());
