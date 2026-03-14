@@ -11,6 +11,7 @@ import net.swordie.ms.client.character.familiar.FamiliarCodexUpdateMask;
 import net.swordie.ms.client.character.items.AdminFlamePickerSession;
 import net.swordie.ms.client.character.items.AdminOzRingSession;
 import net.swordie.ms.client.character.items.AdminPotentialPickerSession;
+import net.swordie.ms.client.character.items.AdminSetEquipSession;
 import net.swordie.ms.client.character.items.Equip;
 import net.swordie.ms.client.character.items.Item;
 import net.swordie.ms.client.character.items.ItemOption;
@@ -260,6 +261,16 @@ public class AdminCommands {
             return (Equip) chr.getInventoryByType(InvType.DEC).getItemBySlot(slot);
         }
         return getAdminEquipBySlot(chr, Integer.parseInt(slotArg));
+    }
+
+    private static short getAdminEquipPos(String slotArg) {
+        if (slotArg == null || slotArg.isEmpty()) {
+            return 0;
+        }
+        if (slotArg.length() > 1 && (slotArg.charAt(0) == 'c' || slotArg.charAt(0) == 'C')) {
+            return Short.parseShort(slotArg.substring(1));
+        }
+        return Short.parseShort(slotArg);
     }
 
     private static void completeQuestSet(Char chr, Set<Integer> questIds) {
@@ -1232,6 +1243,25 @@ public class AdminCommands {
                 return;
             }
             startAdminSelectionScript(chr, new AdminPotentialPickerSession(equip, (short) invPosition, true));
+        }
+    }
+
+    @Command(names = {"setequip", "se"}, requiredType = Admin)
+    public static class SetEquip extends AdminCommand {
+
+        public static void execute(Char chr, String[] args) {
+            if (args.length < 2) {
+                chr.chatMessage("Usage: !setequip <position id>");
+                return;
+            }
+            Equip equip = getAdminEquipBySlot(chr, args[1]);
+            if (equip == null) {
+                chr.chatMessage("There is no equip on this position.");
+                return;
+            }
+            Map<String, Object> props = new HashMap<>();
+            props.put("session", new AdminSetEquipSession(equip, getAdminEquipPos(args[1])));
+            chr.getScriptManager().startScript(0, "admin_set_equip", ScriptType.Npc, props);
         }
     }
 
