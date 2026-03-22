@@ -499,7 +499,8 @@ public class JobSkillHandler {
         }
 
         int stolenSkillMaxLv = stolenSkill.getMasterLevel();
-        int stolenSkillCurLv = targetChr == null ? stolenSkillMaxLv : targetChr.getSkill(stolenSkillId).getCurrentLevel();
+        Skill targetSkill = targetChr == null ? null : targetChr.getSkill(stolenSkillId);
+        int stolenSkillCurLv = targetSkill == null ? stolenSkillMaxLv : targetSkill.getCurrentLevel();
 
         if (add) {
             SkillStealManager.tryAddStolenSkill(chr, stolenSkillId, stolenSkillCurLv, stolenSkillMaxLv);
