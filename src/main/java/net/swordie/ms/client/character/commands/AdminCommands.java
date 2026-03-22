@@ -277,6 +277,29 @@ public class AdminCommands {
         return Short.parseShort(slotArg);
     }
 
+    private static short getMaxHammerSlots(Equip equip) {
+        short maxHammers = ItemConstants.MAX_HAMMER_SLOTS;
+        var defaultEquip = ItemData.getEquipInfoById(equip.getItemId());
+        if (defaultEquip != null && defaultEquip.isHasIUCMax()) {
+            maxHammers = defaultEquip.getIucMax();
+        }
+        return maxHammers;
+    }
+
+    private static boolean applyMaxGoldenHammers(Char chr, Equip equip) {
+        if (equip == null || !ItemConstants.canEquipGoldHammer(equip)) {
+            return false;
+        }
+        int hammersToApply = getMaxHammerSlots(equip) - equip.getIuc();
+        if (hammersToApply <= 0) {
+            return false;
+        }
+        equip.addStat(EquipBaseStat.iuc, hammersToApply);
+        equip.addStat(EquipBaseStat.tuc, hammersToApply);
+        equip.updateToChar(chr);
+        return true;
+    }
+
     private static Set<Short> getAllSkillRootsForJob(short job) {
         Set<Short> jobs = new LinkedHashSet<>();
         JobConstants.JobEnum jobEnum = JobConstants.JobEnum.getJobById(job);
@@ -3493,6 +3516,45 @@ public class AdminCommands {
             Equip equip = (Equip) item;
             equip.setChuc(Short.parseShort(args[2]));
             equip.updateToChar(chr);
+        }
+    }
+
+    @Command(names = {"hammer"}, requiredType = Tester)
+    public static class HammerEquip extends AdminCommand {
+        public static void execute(Char chr, String[] args) {
+            if (args.length < 2) {
+                chr.chatMessage("Usage: !hammer <slot_id>");
+                return;
+            }
+            int slot = Integer.parseInt(args[1]);
+            if (slot == 0) {
+                List<String> changedItems = new ArrayList<>();
+                for (Item item : chr.getEquipInventory().getItems()) {
+                    if (!(item instanceof Equip equip) || !applyMaxGoldenHammers(chr, equip)) {
+                        continue;
+                    }
+                    changedItems.add(String.format("[%d] %s", equip.getBagIndex(), StringData.getItemStringById(equip.getItemId())));
+                }
+                if (changedItems.isEmpty()) {
+                    chr.chatMessage("No equip inventory items could be hammered.");
+                    return;
+                }
+                for (String changedItem : changedItems) {
+                    chr.chatMessage("Hammered " + changedItem);
+                }
+                return;
+            }
+
+            Equip equip = getAdminEquipBySlot(chr, slot);
+            if (equip == null) {
+                chr.chatMessage("No item found in slot " + slot);
+                return;
+            }
+            if (!applyMaxGoldenHammers(chr, equip)) {
+                chr.chatMessage("That item cannot be hammered any further.");
+                return;
+            }
+            chr.chatMessage("Hammered [%d] %s", equip.getBagIndex(), StringData.getItemStringById(equip.getItemId()));
         }
     }
 
