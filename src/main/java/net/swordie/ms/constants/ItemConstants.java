@@ -2442,6 +2442,10 @@ public class ItemConstants {
         return isRecoveryCureItem(itemID) || isRecoveryHPItem(itemID);
     }
 
+    public static boolean isReusableRecoveryItem(int itemID) {
+        return itemID == 2001593 || itemID == 2000054;
+    }
+
 
     public static boolean isScroll(int itemID) {
         return getItemPrefix(itemID) == 204;

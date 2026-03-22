@@ -6035,7 +6035,7 @@ public class Char {
                     chatMessage(ChatType.Mob, String.format("Unhandled stat change item %d", itemID));
             }
         }
-        if (consume) {
+        if (consume && !ItemConstants.isReusableRecoveryItem(itemID)) {
             consumeItem(item);
         }
         dispose();
